@@ -34,7 +34,7 @@ public class Projectile {
     }
 
     public boolean overlaps(Enemy enemy) {
-        float combinedRadius = radius + enemy.radius;
+        float combinedRadius = radius + enemy.archetype.radius;
         return position.dst2(enemy.position) < combinedRadius * combinedRadius;
     }
 

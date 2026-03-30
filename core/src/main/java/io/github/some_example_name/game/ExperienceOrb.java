@@ -6,6 +6,7 @@ public class ExperienceOrb {
     public final Vector2 position = new Vector2();
     public final int value;
     public boolean active = true;
+    public float pulseTime;
 
     public ExperienceOrb(float startX, float startY, int value) {
         position.set(startX, startY);
@@ -13,6 +14,7 @@ public class ExperienceOrb {
     }
 
     public void update(Vector2 playerPosition, float magnetRadius, float delta) {
+        pulseTime += delta;
         float deltaX = playerPosition.x - position.x;
         float deltaY = playerPosition.y - position.y;
         float distanceSquared = deltaX * deltaX + deltaY * deltaY;

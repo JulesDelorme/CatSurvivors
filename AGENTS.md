@@ -1,129 +1,84 @@
-# CatSurvivors Agents
+# Cat Survivors Agents
 
-Project target: a 2D top-down survivor prototype in Java with libGDX.
+Projet: survivor-like 2D Java + LibGDX avec chat traversant les époques.
 
-Current MVP:
-- one controllable cat
-- endless enemy waves
-- contact damage
-- survival timer
-- simple HUD
-- no external art required for the first playable build
-
-## Agent 1: Director
+## Director
 
 Mission:
-- keep scope tight
-- decide integration order
-- protect file ownership boundaries
-- merge subsystem work into one playable build
+- maintenir la cohérence de la démo
+- protéger le flux `Menu -> Game -> Unlock/End`
+- arbitrer les ajouts pour préserver jouabilité et lisibilité
 
-Owns:
-- `AGENTS.md`
+Possède:
 - `README.md`
+- `AGENTS.md`
 - `core/src/main/java/io/github/some_example_name/Main.java`
-- screen wiring and cross-system integration
-
-Rules:
-- reject features that slow down the first playable version
-- prefer simple rectangles/circles before asset pipelines
-- keep package structure small and explicit
-
-## Agent 2: Core Loop
-
-Mission:
-- implement the simulation loop and shared game state
-- own player movement, world bounds, timers, and update order
-
-Owns:
-- `core/src/main/java/io/github/some_example_name/game/`
-- `core/src/main/java/io/github/some_example_name/game/model/`
-- `core/src/main/java/io/github/some_example_name/game/state/`
-
-Expected responsibilities:
-- fixed or semi-fixed update flow
-- player position, speed, health
-- survival timer
-- game over state
-
-## Agent 3: Enemies And Combat
-
-Mission:
-- implement enemy spawning, pursuit behavior, and collision-driven damage
-
-Owns:
-- `core/src/main/java/io/github/some_example_name/game/enemy/`
-- `core/src/main/java/io/github/some_example_name/game/combat/`
-
-Expected responsibilities:
-- spawn cadence
-- enemy data and movement toward player
-- hit detection
-- damage cooldowns and cleanup of dead entities
-
-## Agent 4: Rendering And HUD
-
-Mission:
-- make the prototype readable and immediately playable with placeholder visuals
-
-Owns:
+- `core/src/main/java/io/github/some_example_name/context/`
 - `core/src/main/java/io/github/some_example_name/screen/`
+
+## Session And Gameplay
+
+Mission:
+- gérer la boucle survivor complète
+- porter l'état runtime d'une partie
+- faire vivre XP, niveaux, armes, passifs, vagues, victoire et défaite
+
+Possède:
+- `core/src/main/java/io/github/some_example_name/game/session/`
+- `core/src/main/java/io/github/some_example_name/game/upgrade/`
+- `core/src/main/java/io/github/some_example_name/game/weapon/`
+
+## Stages And Enemies
+
+Mission:
+- définir les maps et la montée en difficulté
+- gérer les archétypes d'ennemis, le terrain quasi infini et les final waves
+
+Possède:
+- `core/src/main/java/io/github/some_example_name/game/stage/`
+- `core/src/main/java/io/github/some_example_name/game/Enemy.java`
+- `core/src/main/java/io/github/some_example_name/game/EnemyArchetype.java`
+
+## Player And Combat Models
+
+Mission:
+- garder des modèles runtime simples, lisibles et réutilisables
+- éviter que les données de combat repartent dans les écrans
+
+Possède:
+- `core/src/main/java/io/github/some_example_name/game/Player.java`
+- `core/src/main/java/io/github/some_example_name/game/Projectile.java`
+- `core/src/main/java/io/github/some_example_name/game/ExperienceOrb.java`
+- `core/src/main/java/io/github/some_example_name/game/OrbitBlade.java`
+- `core/src/main/java/io/github/some_example_name/game/CatAnim.java`
+- `core/src/main/java/io/github/some_example_name/game/PassiveType.java`
+- `core/src/main/java/io/github/some_example_name/game/WeaponType.java`
+
+## Rendering And HUD
+
+Mission:
+- conserver un rendu lisible et fun avec placeholders propres
+- centraliser carte, entités, HUD et overlays
+
+Possède:
 - `core/src/main/java/io/github/some_example_name/render/`
 - `core/src/main/java/io/github/some_example_name/ui/`
-- current `FirstScreen` replacement
 
-Expected responsibilities:
-- camera and viewport
-- ShapeRenderer or texture-based placeholder rendering
-- HUD for HP, timer, and enemy count
-- pause and restart affordances if needed
-
-## Agent 5: Feel And Tuning
+## Platform And Assets
 
 Mission:
-- tune the prototype so it becomes fun quickly without changing the architecture
+- garder le build desktop fiable
+- maintenir les conventions d'assets
 
-Owns:
-- `core/src/main/java/io/github/some_example_name/config/`
-- balancing constants and progression curves
-
-Expected responsibilities:
-- move speed
-- enemy speed and spawn ramp
-- health values
-- arena size and pressure curve
-
-## Agent 6: Platform And Build
-
-Mission:
-- keep desktop launch, Gradle, and assets stable while gameplay evolves
-
-Owns:
+Possède:
 - `build.gradle`
-- `gradle.properties`
 - `lwjgl3/build.gradle`
 - `lwjgl3/src/main/java/io/github/some_example_name/lwjgl3/`
 - `assets/`
 
-Expected responsibilities:
-- run/build reliability
-- launcher settings
-- debug-friendly desktop defaults
-- asset folder conventions
+## Règles
 
-## Working Agreement
-
-- Do not edit another agent's files without an explicit handoff.
-- Prefer adding new packages over growing `FirstScreen` into a god object.
-- Keep the first playable version asset-light and code-heavy.
-- Every gameplay change should still allow `./gradlew clean build` to pass.
-- When in doubt, optimize for a playable loop over abstraction quality.
-
-## First Delivery Order
-
-1. Director defines the package layout and replaces `FirstScreen` with a real game screen.
-2. Core Loop creates player/world/timer state.
-3. Enemies And Combat adds spawning, pursuit, and damage.
-4. Rendering And HUD makes the prototype visible and controllable.
-5. Feel And Tuning adjusts numbers only after the loop is playable.
-6. Platform And Build keeps desktop run/build stable throughout.
+- garder la boucle jouable avant d'ajouter du détail
+- éviter les écrans ou systèmes qui recodent la logique métier
+- ne pas refaire un `FirstScreen` monolithique
+- toute feature doit conserver `./gradlew clean build`

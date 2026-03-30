@@ -4,21 +4,24 @@ import com.badlogic.gdx.math.Vector2;
 
 public class Enemy {
     public final Vector2 position = new Vector2();
-    public final float radius;
-    public final float baseSpeed;
-    public final int xpValue;
+    public final EnemyArchetype archetype;
     public float health;
     public boolean alive = true;
+    public float animationTime;
+    public float hitFlashTime;
+    public float orbitDamageCooldown;
 
-    public Enemy(float startX, float startY, float radius, float baseSpeed, float health, int xpValue) {
+    public Enemy(EnemyArchetype archetype, float startX, float startY) {
+        this.archetype = archetype;
         position.set(startX, startY);
-        this.radius = radius;
-        this.baseSpeed = baseSpeed;
-        this.health = health;
-        this.xpValue = xpValue;
+        health = archetype.maxHealth;
     }
 
     public void update(Vector2 target, float additionalSpeed, float delta) {
+        animationTime += delta;
+        hitFlashTime = Math.max(0f, hitFlashTime - delta * 3.5f);
+        orbitDamageCooldown = Math.max(0f, orbitDamageCooldown - delta);
+
         float deltaX = target.x - position.x;
         float deltaY = target.y - position.y;
         float lengthSquared = deltaX * deltaX + deltaY * deltaY;
@@ -27,13 +30,19 @@ public class Enemy {
         }
 
         float length = (float) Math.sqrt(lengthSquared);
-        float speed = baseSpeed + additionalSpeed;
+        float speed = archetype.baseSpeed + additionalSpeed;
+        if (archetype.burstEvery > 0f) {
+            float cycle = animationTime % archetype.burstEvery;
+            if (cycle <= archetype.burstDuration) {
+                speed *= archetype.burstMultiplier;
+            }
+        }
         position.x += deltaX / length * speed * delta;
         position.y += deltaY / length * speed * delta;
     }
 
     public boolean overlaps(Vector2 target, float targetRadius) {
-        float combinedRadius = radius + targetRadius;
+        float combinedRadius = archetype.radius + targetRadius;
         return position.dst2(target) < combinedRadius * combinedRadius;
     }
 
@@ -43,6 +52,7 @@ public class Enemy {
         }
 
         health -= damage;
+        hitFlashTime = 1f;
         if (health > 0f) {
             return false;
         }

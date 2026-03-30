@@ -13,6 +13,7 @@ public class Player {
     public float health = BASE_MAX_HEALTH;
     public float speed = 280f;
     public float animationTime;
+    public float hitFlashTime;
     public boolean moving;
     public boolean facingLeft;
     public CatAnim anim = CatAnim.IDLE;
@@ -29,6 +30,7 @@ public class Player {
         health = BASE_MAX_HEALTH;
         speed = 280f;
         animationTime = 0f;
+        hitFlashTime = 0f;
         moving = false;
         facingLeft = false;
         anim = CatAnim.IDLE;
@@ -60,5 +62,6 @@ public class Player {
             position.mulAdd(movement, speed * delta);
         }
         animationTime += delta;
+        hitFlashTime = Math.max(0f, hitFlashTime - delta * 3.5f);
     }
 }
