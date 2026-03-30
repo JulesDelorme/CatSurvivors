@@ -1,0 +1,16 @@
+00: grass
+01: dirt
+02: path
+03: stone
+04: mud
+05: bones
+06: firepit
+07: cliff
+08: bush
+09: stump
+10: fossil
+11: water
+12: totem
+13: transition
+14: grass_alt
+15: stone_alt

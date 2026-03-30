@@ -1,0 +1,16 @@
+00: metal_floor
+01: circuit_floor
+02: neon_grid
+03: hazard
+04: rusted_floor
+05: robot_wreckage
+06: energy_core
+07: conveyor
+08: block
+09: glass_panel
+10: vent
+11: server_rack
+12: oil_spill
+13: emitter
+14: transition
+15: metal_alt

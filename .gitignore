@@ -153,6 +153,8 @@ Thumbs.db
 *.*#
 *#*#
 /.kotlin/
+.venv/
+.venv-imagegen/
 /assets/assets.txt
 
 ## Special cases:
