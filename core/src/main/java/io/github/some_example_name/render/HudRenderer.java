@@ -44,7 +44,7 @@ public class HudRenderer {
         rowY -= 26f;
         for (Weapon weapon : session.getOwnedWeapons()) {
             batch.setColor(Color.WHITE);
-            batch.draw(assets.getWeaponIcon(weapon.getType()), StageDefinition.WORLD_WIDTH - 314f, rowY - 18f, 18f, 18f);
+            batch.draw(assets.getWeaponIcon(weapon.getType(), weapon.getLevel()), StageDefinition.WORLD_WIDTH - 314f, rowY - 18f, 18f, 18f);
             font.draw(batch, weapon.getDisplayName() + " " + weapon.getLevel(), StageDefinition.WORLD_WIDTH - 288f, rowY);
             rowY -= 24f;
         }

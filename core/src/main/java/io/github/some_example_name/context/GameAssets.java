@@ -20,6 +20,7 @@ public class GameAssets {
 
     private final Array<Texture> managedTextures = new Array<Texture>();
     private final Texture whitePixel;
+    private final Texture magicOrb;
     private final TextureRegion[] prehistoricTiles;
     private final TextureRegion[] futureTiles;
     private final Animation<TextureRegion> idleAnimation;
@@ -27,10 +28,29 @@ public class GameAssets {
     private final Animation<TextureRegion> jumpAnimation;
     private final Animation<TextureRegion> fallAnimation;
     private final TextureRegion[] ravenIcons;
+    private final TextureRegion[] mageFocusIcons;
+    private final TextureRegion[] mageBookIcons;
+    private final TextureRegion[] swordIcons;
+    private final TextureRegion[] frostBombIcons;
+    private final TextureRegion frostBombProjectile;
+    private final TextureRegion frostBombBurst;
+    private final TextureRegion frostBombSigil;
+    private final TextureRegion frostBombSwirl;
+    private final TextureRegion frostBombTrail;
+    private final TextureRegion frostBombStreak;
+    private final TextureRegion fireCometProjectile;
+    private final TextureRegion fireCometBurst;
+    private final TextureRegion fireCometSigil;
+    private final TextureRegion fireCometStreak;
+    private final TextureRegion[] prehistoryProps;
+    private final TextureRegion[] futureProps;
+    private final TextureRegion prehistoryGroundDecal;
+    private final TextureRegion futureGroundDecal;
     private final ObjectMap<String, TextureRegion> enemySprites = new ObjectMap<String, TextureRegion>();
 
     public GameAssets() {
         whitePixel = createWhitePixel();
+        magicOrb = createMagicOrb();
         prehistoricTiles = loadTiles("tilesets/prehistoric_tileset_32.png");
         futureTiles = loadTiles("tilesets/future_tileset_32.png");
         idleAnimation = loadAnimation("characters/cat/cat_idle_sheet.png", 8, 0.15f);
@@ -38,6 +58,52 @@ public class GameAssets {
         jumpAnimation = loadAnimation("characters/cat/cat_jump_sheet.png", 4, 0.12f);
         fallAnimation = loadAnimation("characters/cat/cat_fall_sheet.png", 4, 0.12f);
         ravenIcons = loadRavenIcons();
+        mageFocusIcons = loadTextureRegions(
+            "sprites/projectiles/mage_diamond_red.png",
+            "sprites/projectiles/mage_diamond_violet.png",
+            "sprites/projectiles/mage_diamond_blue.png",
+            "sprites/projectiles/mage_diamond_green.png"
+        );
+        mageBookIcons = loadTextureRegions(
+            "sprites/projectiles/mage_bolt_red.png",
+            "sprites/projectiles/mage_bolt_violet.png",
+            "sprites/projectiles/mage_bolt_blue.png",
+            "sprites/projectiles/mage_bolt_green.png"
+        );
+        swordIcons = loadTextureRegions(
+            "sprites/weapons/sword_red.png",
+            "sprites/weapons/sword_blue.png",
+            "sprites/weapons/sword_silver.png"
+        );
+        frostBombIcons = loadTextureRegions(
+            "sprites/frost/frost_bomb.png",
+            "sprites/frost/frost_vortex.png",
+            "sprites/frost/frost_swirl.png",
+            "sprites/frost/frost_sigil.png"
+        );
+        frostBombProjectile = new TextureRegion(loadTexture("sprites/frost/frost_bomb.png"));
+        frostBombBurst = new TextureRegion(loadTexture("sprites/frost/frost_burst.png"));
+        frostBombSigil = new TextureRegion(loadTexture("sprites/frost/frost_sigil.png"));
+        frostBombSwirl = new TextureRegion(loadTexture("sprites/frost/frost_swirl.png"));
+        frostBombTrail = new TextureRegion(loadTexture("sprites/frost/frost_trail.png"));
+        frostBombStreak = new TextureRegion(loadTexture("sprites/frost/frost_streak.png"));
+        fireCometProjectile = new TextureRegion(loadTexture("sprites/effects/fire_comet.png"));
+        fireCometBurst = new TextureRegion(loadTexture("sprites/effects/fire_burst.png"));
+        fireCometSigil = new TextureRegion(loadTexture("sprites/effects/fire_sigil.png"));
+        fireCometStreak = new TextureRegion(loadTexture("sprites/effects/fire_streak.png"));
+        prehistoryProps = loadTextureRegions(
+            "sprites/props/prehistory/prehistory_firepit.png",
+            "sprites/props/prehistory/prehistory_brazier.png",
+            "sprites/props/prehistory/prehistory_relic.png",
+            "sprites/props/prehistory/prehistory_stone.png"
+        );
+        futureProps = loadTextureRegions(
+            "sprites/props/future/future_shield_cyan.png",
+            "sprites/props/future/future_shield_violet.png",
+            "sprites/props/future/future_core.png"
+        );
+        prehistoryGroundDecal = new TextureRegion(loadTexture("sprites/props/prehistory/prehistory_rune.png"));
+        futureGroundDecal = new TextureRegion(loadTexture("sprites/props/future/future_rune.png"));
         loadEnemySprites();
     }
 
@@ -45,6 +111,33 @@ public class GameAssets {
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(Color.WHITE);
         pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        pixmap.dispose();
+        managedTextures.add(texture);
+        return texture;
+    }
+
+    private Texture createMagicOrb() {
+        int size = 32;
+        float radius = (size - 2) * 0.5f;
+        float center = (size - 1) * 0.5f;
+        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                float dx = x - center;
+                float dy = y - center;
+                float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                if (distance > radius) {
+                    continue;
+                }
+                float normalized = distance / radius;
+                float alpha = 1f - normalized;
+                float brightness = 0.45f + (1f - normalized) * 0.55f;
+                pixmap.setColor(brightness, brightness, brightness, Math.min(1f, alpha * 1.2f));
+                pixmap.drawPixel(x, y);
+            }
+        }
         Texture texture = new Texture(pixmap);
         texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         pixmap.dispose();
@@ -82,6 +175,14 @@ public class GameAssets {
         return new Animation<TextureRegion>(frameDuration, frames, Animation.PlayMode.LOOP);
     }
 
+    private TextureRegion[] loadTextureRegions(String... paths) {
+        TextureRegion[] regions = new TextureRegion[paths.length];
+        for (int index = 0; index < paths.length; index++) {
+            regions[index] = new TextureRegion(loadTexture(paths[index]));
+        }
+        return regions;
+    }
+
     private TextureRegion[] loadRavenIcons() {
         Texture texture = loadTexture("icons/raven_fantasy_32.png");
         TextureRegion[][] split = TextureRegion.split(texture, TILE_SIZE, TILE_SIZE);
@@ -115,6 +216,10 @@ public class GameAssets {
         return whitePixel;
     }
 
+    public Texture getMagicOrb() {
+        return magicOrb;
+    }
+
     public TextureRegion[] getTiles(TilesetType tilesetType) {
         return tilesetType == TilesetType.FUTURE ? futureTiles : prehistoricTiles;
     }
@@ -138,17 +243,85 @@ public class GameAssets {
     }
 
     public TextureRegion getWeaponIcon(WeaponType type) {
+        return getWeaponIcon(type, 1);
+    }
+
+    public TextureRegion getWeaponIcon(WeaponType type, int level) {
         switch (type) {
             case HAIRBALL:
                 return ravenIcons[0];
             case STONE_SPRAY:
-                return ravenIcons[1];
+                return mageBookIcons[getLevelVariantIndex(level, mageBookIcons.length)];
             case BONE_DART:
-                return ravenIcons[2];
+                return swordIcons[getLevelVariantIndex(level, swordIcons.length)];
+            case FROST_BOMB:
+                return frostBombIcons[getLevelVariantIndex(level, frostBombIcons.length)];
             case ORBIT_CLAWS:
-            default:
                 return ravenIcons[3];
+            default:
+                return ravenIcons[0];
         }
+    }
+
+    public TextureRegion getMageFocusIcon(int level) {
+        return mageFocusIcons[getLevelVariantIndex(level, mageFocusIcons.length)];
+    }
+
+    public TextureRegion getSwordIcon(int level) {
+        return swordIcons[getLevelVariantIndex(level, swordIcons.length)];
+    }
+
+    public TextureRegion getFrostBombProjectile() {
+        return frostBombProjectile;
+    }
+
+    public TextureRegion getFrostBombBurst() {
+        return frostBombBurst;
+    }
+
+    public TextureRegion getFrostBombSigil() {
+        return frostBombSigil;
+    }
+
+    public TextureRegion getFrostBombSwirl() {
+        return frostBombSwirl;
+    }
+
+    public TextureRegion getFrostBombTrail() {
+        return frostBombTrail;
+    }
+
+    public TextureRegion getFrostBombStreak() {
+        return frostBombStreak;
+    }
+
+    public TextureRegion getFireCometProjectile() {
+        return fireCometProjectile;
+    }
+
+    public TextureRegion getFireCometBurst() {
+        return fireCometBurst;
+    }
+
+    public TextureRegion getFireCometSigil() {
+        return fireCometSigil;
+    }
+
+    public TextureRegion getFireCometStreak() {
+        return fireCometStreak;
+    }
+
+    public TextureRegion[] getStageProps(TilesetType tilesetType) {
+        return tilesetType == TilesetType.FUTURE ? futureProps : prehistoryProps;
+    }
+
+    public TextureRegion getStageGroundDecal(TilesetType tilesetType) {
+        return tilesetType == TilesetType.FUTURE ? futureGroundDecal : prehistoryGroundDecal;
+    }
+
+    private int getLevelVariantIndex(int level, int variantCount) {
+        int clampedLevel = Math.max(1, Math.min(5, level));
+        return Math.min(variantCount - 1, (clampedLevel - 1) * variantCount / 5);
     }
 
     public TextureRegion getPassiveIcon(PassiveType type) {

@@ -61,7 +61,7 @@ public class OverlayRenderer {
 
             if (choice.category == UpgradeCategory.WEAPON) {
                 batch.setColor(Color.WHITE);
-                batch.draw(assets.getWeaponIcon(choice.weaponType), card.x + 16f, card.y + 112f, 28f, 28f);
+                batch.draw(assets.getWeaponIcon(choice.weaponType, choice.resultingLevel), card.x + 16f, card.y + 112f, 28f, 28f);
             } else {
                 batch.setColor(Color.WHITE);
                 batch.draw(assets.getPassiveIcon(choice.passiveType), card.x + 16f, card.y + 112f, 28f, 28f);

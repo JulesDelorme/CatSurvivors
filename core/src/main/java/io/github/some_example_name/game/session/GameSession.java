@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.Array;
 import io.github.some_example_name.game.Enemy;
 import io.github.some_example_name.game.EnemyArchetype;
 import io.github.some_example_name.game.ExperienceOrb;
+import io.github.some_example_name.game.FrostPatch;
 import io.github.some_example_name.game.OrbitBlade;
 import io.github.some_example_name.game.PassiveType;
 import io.github.some_example_name.game.Player;
@@ -34,6 +35,7 @@ public class GameSession {
     private final Array<Enemy> enemies = new Array<Enemy>();
     private final Array<Projectile> projectiles = new Array<Projectile>();
     private final Array<ExperienceOrb> experienceOrbs = new Array<ExperienceOrb>();
+    private final Array<FrostPatch> frostPatches = new Array<FrostPatch>();
     private final Array<OrbitBlade> orbitBlades = new Array<OrbitBlade>();
     private final Array<UpgradeChoice> levelChoices = new Array<UpgradeChoice>();
     private final EnumMap<WeaponType, Weapon> weapons = new EnumMap<WeaponType, Weapon>(WeaponType.class);
@@ -57,8 +59,9 @@ public class GameSession {
         }
 
         weapons.put(WeaponType.HAIRBALL, new ProjectileWeapon(WeaponType.HAIRBALL, "Canon à poils", 1));
-        weapons.put(WeaponType.STONE_SPRAY, new ProjectileWeapon(WeaponType.STONE_SPRAY, "Spray de pierres", 0));
-        weapons.put(WeaponType.BONE_DART, new ProjectileWeapon(WeaponType.BONE_DART, "Dards d'os", 0));
+        weapons.put(WeaponType.STONE_SPRAY, new ProjectileWeapon(WeaponType.STONE_SPRAY, "Livre de mage", 0));
+        weapons.put(WeaponType.BONE_DART, new ProjectileWeapon(WeaponType.BONE_DART, "Épée runique", 0));
+        weapons.put(WeaponType.FROST_BOMB, new ProjectileWeapon(WeaponType.FROST_BOMB, "Bombe givrante", 0));
         weapons.put(WeaponType.ORBIT_CLAWS, new OrbitWeapon(0));
 
         xpToNextLevel = getXpThreshold(level);
@@ -84,6 +87,10 @@ public class GameSession {
 
     public Array<ExperienceOrb> getExperienceOrbs() {
         return experienceOrbs;
+    }
+
+    public Array<FrostPatch> getFrostPatches() {
+        return frostPatches;
     }
 
     public Array<OrbitBlade> getOrbitBlades() {
@@ -154,6 +161,7 @@ public class GameSession {
         }
 
         updateProjectiles(frameDelta);
+        updateFrostPatches(frameDelta);
         updateEnemies(frameDelta);
         resolveProjectileHits();
         resolveOrbitHits();
@@ -197,6 +205,11 @@ public class GameSession {
             }
         }
         return ownedWeapons;
+    }
+
+    public int getWeaponLevel(WeaponType weaponType) {
+        Weapon weapon = weapons.get(weaponType);
+        return weapon == null ? 0 : weapon.getLevel();
     }
 
     public int getPassiveLevel(PassiveType passiveType) {
@@ -247,7 +260,16 @@ public class GameSession {
     }
 
     public void fireAimedBurst(int projectileCount, float spreadDegrees, float speed, float radius, float damage,
-                               int remainingHits, float maxDistance, WeaponType weaponType, float aimRange) {
+                               int remainingHits, float maxDistance, WeaponType weaponType, int weaponLevel,
+                               float aimRange) {
+        fireAimedBurst(projectileCount, spreadDegrees, speed, radius, damage, remainingHits, maxDistance, weaponType,
+            weaponLevel, aimRange, 0f, 0f, 0f, 0f, 0f);
+    }
+
+    public void fireAimedBurst(int projectileCount, float spreadDegrees, float speed, float radius, float damage,
+                               int remainingHits, float maxDistance, WeaponType weaponType, int weaponLevel,
+                               float aimRange, float spawnDistance, float splashRadius, float frostPatchRadius,
+                               float frostPatchDuration, float frostSlowMultiplier) {
         Enemy target = findNearestEnemy(aimRange);
         if (target != null) {
             attackDirectionBuffer.set(target.position).sub(player.position).nor();
@@ -262,22 +284,29 @@ public class GameSession {
         for (int index = 0; index < projectileCount; index++) {
             float spreadOffset = (index - (projectileCount - 1) * 0.5f) * spreadDegrees;
             weaponDirectionBuffer.set(attackDirectionBuffer).rotateDeg(spreadOffset);
+            float startX = player.position.x + weaponDirectionBuffer.x * spawnDistance;
+            float startY = player.position.y + 4f + weaponDirectionBuffer.y * spawnDistance;
             projectiles.add(new Projectile(
-                player.position.x,
-                player.position.y + 4f,
+                startX,
+                startY,
                 weaponDirectionBuffer,
                 speed,
                 radius,
                 damage,
                 remainingHits,
                 maxDistance,
-                weaponType
+                weaponType,
+                weaponLevel,
+                splashRadius,
+                frostPatchRadius,
+                frostPatchDuration,
+                frostSlowMultiplier
             ));
         }
     }
 
     public void fireRadialBurst(int projectileCount, float speed, float radius, float damage, int remainingHits,
-                                float maxDistance, WeaponType weaponType) {
+                                float maxDistance, WeaponType weaponType, int weaponLevel) {
         float startAngle = MathUtils.random(0f, 359f);
         for (int index = 0; index < projectileCount; index++) {
             float angle = startAngle + 360f * index / projectileCount;
@@ -291,7 +320,12 @@ public class GameSession {
                 damage,
                 remainingHits,
                 maxDistance,
-                weaponType
+                weaponType,
+                weaponLevel,
+                0f,
+                0f,
+                0f,
+                0f
             ));
         }
     }
@@ -375,8 +409,25 @@ public class GameSession {
                 continue;
             }
             projectile.update(delta);
+            if (!projectile.active && projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
+                spawnFrostPatch(projectile);
+            }
             if (projectile.position.dst2(player.position) > ENEMY_DESPAWN_RADIUS * ENEMY_DESPAWN_RADIUS) {
                 projectile.active = false;
+                if (projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
+                    spawnFrostPatch(projectile);
+                }
+            }
+        }
+    }
+
+    private void updateFrostPatches(float delta) {
+        for (FrostPatch patch : frostPatches) {
+            patch.update(delta);
+        }
+        for (int index = frostPatches.size - 1; index >= 0; index--) {
+            if (frostPatches.get(index).isExpired()) {
+                frostPatches.removeIndex(index);
             }
         }
     }
@@ -385,9 +436,21 @@ public class GameSession {
         float speedBonus = stage.getSpeedBonus(survivalTime);
         for (Enemy enemy : enemies) {
             if (enemy.alive) {
-                enemy.update(player.position, speedBonus, delta);
+                enemy.update(player.position, speedBonus, getEnemySpeedMultiplier(enemy), delta);
             }
         }
+    }
+
+    private float getEnemySpeedMultiplier(Enemy enemy) {
+        float speedMultiplier = 1f;
+        for (FrostPatch patch : frostPatches) {
+            if (!patch.overlaps(enemy.position, enemy.archetype.radius)) {
+                continue;
+            }
+            speedMultiplier = Math.min(speedMultiplier, patch.slowMultiplier);
+            enemy.applyChill(0.35f);
+        }
+        return speedMultiplier;
     }
 
     private void resolveProjectileHits() {
@@ -399,8 +462,15 @@ public class GameSession {
                 if (!enemy.alive || !projectile.overlaps(enemy)) {
                     continue;
                 }
+                if (projectile.splashRadius > 0f) {
+                    explodeProjectile(projectile);
+                    break;
+                }
                 if (enemy.applyDamage(projectile.damage)) {
                     spawnExperienceOrb(enemy);
+                }
+                if (projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
+                    spawnFrostPatch(projectile);
                 }
                 projectile.registerHit();
                 if (!projectile.active) {
@@ -408,6 +478,37 @@ public class GameSession {
                 }
             }
         }
+    }
+
+    private void explodeProjectile(Projectile projectile) {
+        float splashRadiusSquared = projectile.splashRadius * projectile.splashRadius;
+        for (Enemy enemy : enemies) {
+            if (!enemy.alive) {
+                continue;
+            }
+            float combinedRadius = projectile.splashRadius + enemy.archetype.radius;
+            if (projectile.position.dst2(enemy.position) > Math.max(splashRadiusSquared, combinedRadius * combinedRadius)) {
+                continue;
+            }
+            if (enemy.applyDamage(projectile.damage)) {
+                spawnExperienceOrb(enemy);
+            }
+        }
+        if (projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
+            spawnFrostPatch(projectile);
+        }
+        projectile.active = false;
+    }
+
+    private void spawnFrostPatch(Projectile projectile) {
+        frostPatches.add(new FrostPatch(
+            projectile.position.x,
+            projectile.position.y,
+            projectile.frostPatchRadius,
+            projectile.frostPatchDuration,
+            projectile.frostSlowMultiplier
+        ));
+        projectile.frostPatchSpawned = true;
     }
 
     private void resolveOrbitHits() {

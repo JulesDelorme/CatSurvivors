@@ -10,6 +10,7 @@ public class Enemy {
     public float animationTime;
     public float hitFlashTime;
     public float orbitDamageCooldown;
+    public float chilledTime;
 
     public Enemy(EnemyArchetype archetype, float startX, float startY) {
         this.archetype = archetype;
@@ -17,10 +18,11 @@ public class Enemy {
         health = archetype.maxHealth;
     }
 
-    public void update(Vector2 target, float additionalSpeed, float delta) {
+    public void update(Vector2 target, float additionalSpeed, float speedMultiplier, float delta) {
         animationTime += delta;
         hitFlashTime = Math.max(0f, hitFlashTime - delta * 3.5f);
         orbitDamageCooldown = Math.max(0f, orbitDamageCooldown - delta);
+        chilledTime = Math.max(0f, chilledTime - delta * 3f);
 
         float deltaX = target.x - position.x;
         float deltaY = target.y - position.y;
@@ -30,7 +32,7 @@ public class Enemy {
         }
 
         float length = (float) Math.sqrt(lengthSquared);
-        float speed = archetype.baseSpeed + additionalSpeed;
+        float speed = (archetype.baseSpeed + additionalSpeed) * speedMultiplier;
         if (archetype.burstEvery > 0f) {
             float cycle = animationTime % archetype.burstEvery;
             if (cycle <= archetype.burstDuration) {
@@ -59,5 +61,9 @@ public class Enemy {
 
         alive = false;
         return true;
+    }
+
+    public void applyChill(float duration) {
+        chilledTime = Math.max(chilledTime, duration);
     }
 }
