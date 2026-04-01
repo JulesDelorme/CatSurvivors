@@ -44,7 +44,11 @@ public class EndScreen extends ScreenAdapter {
         context.batch.setProjectionMatrix(camera.combined);
         context.batch.begin();
         drawRect(0f, 0f, UI_WIDTH, UI_HEIGHT, new Color(victory ? 0.04f : 0.06f, 0.05f, victory ? 0.08f : 0.06f, 1f));
+        drawGlow(640f, 386f, 420f, victory ? context.getStage(stageId).accentColor : new Color(0.96f, 0.42f, 0.38f, 1f),
+            victory ? 0.16f : 0.12f);
+        drawRect(226f, 90f, 840f, 520f, new Color(0f, 0f, 0f, 0.24f));
         drawRect(220f, 96f, 840f, 520f, new Color(0.08f, 0.09f, 0.12f, 0.96f));
+        drawRect(220f, 612f, 840f, 4f, victory ? context.getStage(stageId).accentColor : new Color(0.95f, 0.52f, 0.48f, 1f));
 
         if (victory) {
             context.font.setColor(new Color(0.95f, 0.88f, 0.62f, 1f));
@@ -67,12 +71,12 @@ public class EndScreen extends ScreenAdapter {
 
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.R) || (!victory && Gdx.input.isKeyJustPressed(Input.Keys.ENTER))) {
-            context.startStage(stageId);
+            context.flow().startStage(stageId);
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.M) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)
             || (victory && Gdx.input.isKeyJustPressed(Input.Keys.ENTER))) {
-            context.showMenu();
+            context.flow().showMenu();
             return;
         }
         if (!Gdx.input.justTouched()) {
@@ -82,9 +86,9 @@ public class EndScreen extends ScreenAdapter {
         pointer.set(Gdx.input.getX(), Gdx.input.getY(), 0f);
         viewport.unproject(pointer);
         if (retryButton.contains(pointer.x, pointer.y)) {
-            context.startStage(stageId);
+            context.flow().startStage(stageId);
         } else if (menuButton.contains(pointer.x, pointer.y)) {
-            context.showMenu();
+            context.flow().showMenu();
         }
     }
 
@@ -98,6 +102,12 @@ public class EndScreen extends ScreenAdapter {
     private void drawRect(float x, float y, float width, float height, Color color) {
         context.batch.setColor(color);
         context.batch.draw(context.assets.getWhitePixel(), x, y, width, height);
+        context.batch.setColor(Color.WHITE);
+    }
+
+    private void drawGlow(float centerX, float centerY, float size, Color color, float alpha) {
+        context.batch.setColor(color.r, color.g, color.b, alpha);
+        context.batch.draw(context.assets.getSoftGlow(), centerX - size * 0.5f, centerY - size * 0.5f, size, size);
         context.batch.setColor(Color.WHITE);
     }
 

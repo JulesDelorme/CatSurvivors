@@ -39,7 +39,8 @@ Le déblocage de la map 2 est stocké localement par LibGDX dans les préférenc
 Le code est volontairement modulaire sans partir sur un ECS complexe.
 
 - [`Main`](./core/src/main/java/io/github/some_example_name/Main.java): racine `Game`
-- [`context`](./core/src/main/java/io/github/some_example_name/context): assets partagés, navigation, progression persistante
+- [`context`](./core/src/main/java/io/github/some_example_name/context): assets partagés et hôte des services de l'application
+- [`context/flow`](./core/src/main/java/io/github/some_example_name/context/flow): machine de flux applicatif `Menu -> Game -> Unlock/End`, inspirée du patron State et injectée via interfaces
 - [`screen`](./core/src/main/java/io/github/some_example_name/screen): `MenuScreen`, `GameScreen`, `UnlockScreen`, `EndScreen`
 - [`game/session`](./core/src/main/java/io/github/some_example_name/game/session): boucle de partie, état runtime, XP, vagues, victoire/défaite
 - [`game/stage`](./core/src/main/java/io/github/some_example_name/game/stage): définitions de maps, layouts, tuning par époque
@@ -47,6 +48,8 @@ Le code est volontairement modulaire sans partir sur un ECS complexe.
 - [`game/weapon`](./core/src/main/java/io/github/some_example_name/game/weapon): système d'armes extensible
 - [`game/upgrade`](./core/src/main/java/io/github/some_example_name/game/upgrade): cartes d'amélioration
 - [`render`](./core/src/main/java/io/github/some_example_name/render): rendu map, entités, HUD et overlays
+
+Les écrans ne décident plus directement du déblocage ou de la navigation de fin de run: ils délèguent au coordinateur de flux. La progression persistante est injectée derrière l'interface `StageProgression`, ce qui permet d'ajouter des tests unitaires sur les transitions critiques sans démarrer LibGDX.
 
 ## Assets
 

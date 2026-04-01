@@ -11,7 +11,7 @@ public class Main extends Game {
     @Override
     public void create() {
         context = new GameContext(this);
-        context.showMenu();
+        context.flow().showMenu();
     }
 
     public void replaceScreen(Screen screen) {

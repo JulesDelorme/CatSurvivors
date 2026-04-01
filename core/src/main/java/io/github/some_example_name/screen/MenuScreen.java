@@ -41,13 +41,15 @@ public class MenuScreen extends ScreenAdapter {
         batch = context.batch;
         whitePixel = context.assets.getWhitePixel();
         futureButton = new UiButton(710f, 160f, 420f, 280f, "Futur / Robots",
-            context.progressStore.isUnlocked(StageId.FUTURE) ? "Débloqué" : "Verrouillé: termine la Préhistoire",
-            context.progressStore.isUnlocked(StageId.FUTURE));
+            context.flow().isStageUnlocked(StageId.FUTURE) ? "Débloqué" : "Verrouillé: termine la Préhistoire",
+            context.flow().isStageUnlocked(StageId.FUTURE));
     }
 
     @Override
     public void render(float delta) {
         handleInput();
+        StageDefinition prehistory = context.getStage(StageId.PREHISTORY);
+        StageDefinition future = context.getStage(StageId.FUTURE);
 
         Gdx.gl.glClearColor(0.03f, 0.04f, 0.06f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -58,8 +60,12 @@ public class MenuScreen extends ScreenAdapter {
         batch.begin();
 
         drawRect(0f, 0f, UI_WIDTH, UI_HEIGHT, new Color(0.03f, 0.04f, 0.06f, 1f));
+        drawGlow(194f, 590f, 340f, prehistory.accentColor, 0.16f);
+        drawGlow(1080f, 168f, 320f, future.accentColor, 0.14f);
+        drawRect(58f, 66f, 1172f, 580f, new Color(0f, 0f, 0f, 0.22f));
         drawRect(54f, 70f, 1172f, 580f, PANEL);
         drawRect(80f, 520f, 1120f, 96f, new Color(0.12f, 0.17f, 0.19f, 1f));
+        drawRect(80f, 613f, 1120f, 3f, new Color(0.45f, 0.88f, 0.86f, 1f));
 
         context.font.setColor(new Color(0.96f, 0.95f, 0.82f, 1f));
         context.font.draw(batch, "Cat Survivors", 96f, 586f);
@@ -69,7 +75,7 @@ public class MenuScreen extends ScreenAdapter {
             96f, 528f);
 
         drawStageCard(prehistoryButton, StageId.PREHISTORY, true);
-        drawStageCard(futureButton, StageId.FUTURE, context.progressStore.isUnlocked(StageId.FUTURE));
+        drawStageCard(futureButton, StageId.FUTURE, context.flow().isStageUnlocked(StageId.FUTURE));
 
         context.font.setColor(Color.WHITE);
         context.font.draw(batch, "Raccourcis: [1] Préhistoire  [2] Futur si débloqué", 96f, 112f);
@@ -79,13 +85,13 @@ public class MenuScreen extends ScreenAdapter {
 
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            context.startStage(StageId.PREHISTORY);
+            context.flow().startStage(StageId.PREHISTORY);
             return;
         }
 
-        if (context.progressStore.isUnlocked(StageId.FUTURE)
+        if (context.flow().isStageUnlocked(StageId.FUTURE)
             && Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
-            context.startStage(StageId.FUTURE);
+            context.flow().startStage(StageId.FUTURE);
             return;
         }
 
@@ -96,15 +102,20 @@ public class MenuScreen extends ScreenAdapter {
         pointer.set(Gdx.input.getX(), Gdx.input.getY(), 0f);
         viewport.unproject(pointer);
         if (prehistoryButton.contains(pointer.x, pointer.y)) {
-            context.startStage(StageId.PREHISTORY);
+            context.flow().startStage(StageId.PREHISTORY);
         } else if (futureButton.contains(pointer.x, pointer.y)) {
-            context.startStage(StageId.FUTURE);
+            context.flow().startStage(StageId.FUTURE);
         }
     }
 
     private void drawStageCard(UiButton button, StageId stageId, boolean enabled) {
+        StageDefinition stage = context.getStage(stageId);
         Color cardColor = enabled ? CARD : CARD_LOCKED;
+        drawRect(button.bounds.x + 4f, button.bounds.y - 4f, button.bounds.width, button.bounds.height, new Color(0f, 0f, 0f, 0.22f));
+        drawGlow(button.bounds.x + button.bounds.width * 0.5f, button.bounds.y + button.bounds.height * 0.5f, 240f, stage.accentColor,
+            enabled ? 0.12f : 0.05f);
         drawRect(button.bounds.x, button.bounds.y, button.bounds.width, button.bounds.height, cardColor);
+        drawRect(button.bounds.x, button.bounds.y + button.bounds.height - 4f, button.bounds.width, 4f, stage.accentColor);
         drawTilesPreview(button.bounds, stageId);
         drawRect(button.bounds.x + 18f, button.bounds.y + 18f, button.bounds.width - 36f, 70f,
             enabled ? BUTTON : BUTTON_DISABLED);
@@ -146,6 +157,12 @@ public class MenuScreen extends ScreenAdapter {
     private void drawRect(float x, float y, float width, float height, Color color) {
         batch.setColor(color);
         batch.draw(whitePixel, x, y, width, height);
+        batch.setColor(Color.WHITE);
+    }
+
+    private void drawGlow(float centerX, float centerY, float size, Color color, float alpha) {
+        batch.setColor(color.r, color.g, color.b, alpha);
+        batch.draw(context.assets.getSoftGlow(), centerX - size * 0.5f, centerY - size * 0.5f, size, size);
         batch.setColor(Color.WHITE);
     }
 

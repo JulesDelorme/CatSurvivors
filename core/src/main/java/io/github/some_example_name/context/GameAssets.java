@@ -21,6 +21,7 @@ public class GameAssets {
     private final Array<Texture> managedTextures = new Array<Texture>();
     private final Texture whitePixel;
     private final Texture magicOrb;
+    private final Texture softGlow;
     private final TextureRegion[] prehistoricTiles;
     private final TextureRegion[] futureTiles;
     private final Animation<TextureRegion> idleAnimation;
@@ -51,6 +52,7 @@ public class GameAssets {
     public GameAssets() {
         whitePixel = createWhitePixel();
         magicOrb = createMagicOrb();
+        softGlow = createSoftGlow();
         prehistoricTiles = loadTiles("tilesets/prehistoric_tileset_32.png");
         futureTiles = loadTiles("tilesets/future_tileset_32.png");
         idleAnimation = loadAnimation("characters/cat/cat_idle_sheet.png", 8, 0.15f);
@@ -145,6 +147,33 @@ public class GameAssets {
         return texture;
     }
 
+    private Texture createSoftGlow() {
+        int size = 96;
+        float radius = (size - 2) * 0.5f;
+        float center = (size - 1) * 0.5f;
+        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                float dx = x - center;
+                float dy = y - center;
+                float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                if (distance > radius) {
+                    continue;
+                }
+                float normalized = distance / radius;
+                float alpha = 1f - normalized * normalized;
+                alpha *= alpha;
+                pixmap.setColor(1f, 1f, 1f, alpha * 0.9f);
+                pixmap.drawPixel(x, y);
+            }
+        }
+        Texture texture = new Texture(pixmap);
+        texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+        pixmap.dispose();
+        managedTextures.add(texture);
+        return texture;
+    }
+
     private Texture loadTexture(String path) {
         Texture texture = new Texture(Gdx.files.internal(path));
         texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
@@ -218,6 +247,10 @@ public class GameAssets {
 
     public Texture getMagicOrb() {
         return magicOrb;
+    }
+
+    public Texture getSoftGlow() {
+        return softGlow;
     }
 
     public TextureRegion[] getTiles(TilesetType tilesetType) {

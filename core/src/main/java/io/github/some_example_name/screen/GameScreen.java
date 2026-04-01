@@ -15,7 +15,6 @@ import io.github.some_example_name.context.GameContext;
 import io.github.some_example_name.game.session.GameSession;
 import io.github.some_example_name.game.session.SessionState;
 import io.github.some_example_name.game.stage.StageDefinition;
-import io.github.some_example_name.game.stage.StageId;
 import io.github.some_example_name.render.EntityRenderer;
 import io.github.some_example_name.render.HudRenderer;
 import io.github.some_example_name.render.MapRenderer;
@@ -67,7 +66,7 @@ public class GameScreen extends ScreenAdapter {
         context.batch.begin();
         hudRenderer.draw(context.batch, context.font, context.glyphLayout, context.assets.getWhitePixel(), context.assets, session);
         if (session.getState() == SessionState.PAUSED) {
-            overlayRenderer.drawPause(context.batch, context.font, context.glyphLayout, context.assets.getWhitePixel());
+            overlayRenderer.drawPause(context.batch, context.font, context.glyphLayout, context.assets.getWhitePixel(), context.assets);
         } else if (session.getState() == SessionState.LEVEL_UP) {
             overlayRenderer.drawLevelUp(context.batch, context.font, context.glyphLayout, context.assets.getWhitePixel(),
                 context.assets, session, choiceBounds, hoveredChoiceIndex());
@@ -158,7 +157,7 @@ public class GameScreen extends ScreenAdapter {
 
         if (session.isLost()) {
             routed = true;
-            context.showEnd(stage.id, false);
+            context.flow().failStage(stage.id);
             return;
         }
 
@@ -167,12 +166,7 @@ public class GameScreen extends ScreenAdapter {
         }
 
         routed = true;
-        if (stage.id == StageId.PREHISTORY) {
-            context.progressStore.unlock(StageId.FUTURE);
-            context.showUnlock(StageId.FUTURE);
-        } else {
-            context.showEnd(stage.id, true);
-        }
+        context.flow().completeStage(stage.id);
     }
 
     @Override

@@ -43,7 +43,10 @@ public class UnlockScreen extends ScreenAdapter {
         context.batch.setProjectionMatrix(camera.combined);
         context.batch.begin();
         drawRect(0f, 0f, UI_WIDTH, UI_HEIGHT, new Color(0.03f, 0.05f, 0.08f, 1f));
+        drawGlow(640f, 392f, 420f, context.getStage(unlockedStageId).accentColor, 0.16f);
+        drawRect(226f, 90f, 840f, 520f, new Color(0f, 0f, 0f, 0.24f));
         drawRect(220f, 96f, 840f, 520f, new Color(0.07f, 0.09f, 0.12f, 0.96f));
+        drawRect(220f, 612f, 840f, 4f, context.getStage(unlockedStageId).accentColor);
 
         context.font.setColor(new Color(0.42f, 0.98f, 0.94f, 1f));
         context.font.draw(context.batch, "Époque suivante débloquée", 408f, 566f);
@@ -64,11 +67,11 @@ public class UnlockScreen extends ScreenAdapter {
 
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-            context.startStage(unlockedStageId);
+            context.flow().startStage(unlockedStageId);
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.M) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            context.showMenu();
+            context.flow().showMenu();
             return;
         }
         if (!Gdx.input.justTouched()) {
@@ -78,9 +81,9 @@ public class UnlockScreen extends ScreenAdapter {
         pointer.set(Gdx.input.getX(), Gdx.input.getY(), 0f);
         viewport.unproject(pointer);
         if (playButton.contains(pointer.x, pointer.y)) {
-            context.startStage(unlockedStageId);
+            context.flow().startStage(unlockedStageId);
         } else if (menuButton.contains(pointer.x, pointer.y)) {
-            context.showMenu();
+            context.flow().showMenu();
         }
     }
 
@@ -94,6 +97,12 @@ public class UnlockScreen extends ScreenAdapter {
     private void drawRect(float x, float y, float width, float height, Color color) {
         context.batch.setColor(color);
         context.batch.draw(context.assets.getWhitePixel(), x, y, width, height);
+        context.batch.setColor(Color.WHITE);
+    }
+
+    private void drawGlow(float centerX, float centerY, float size, Color color, float alpha) {
+        context.batch.setColor(color.r, color.g, color.b, alpha);
+        context.batch.draw(context.assets.getSoftGlow(), centerX - size * 0.5f, centerY - size * 0.5f, size, size);
         context.batch.setColor(Color.WHITE);
     }
 
