@@ -4,9 +4,7 @@ import io.github.some_example_name.game.stage.StageId;
 
 import java.util.Objects;
 
-/**
- * Centralizes the menu -> game -> unlock/end flow so screens stay focused on rendering and input.
- */
+// Centralise le flux Menu -> Game -> Unlock/End pour éviter de disperser cette logique dans les écrans.
 public class DefaultAppFlowCoordinator implements AppFlowCoordinator {
     private final AppFlowRouter router;
     private final StageProgression progression;
@@ -33,12 +31,14 @@ public class DefaultAppFlowCoordinator implements AppFlowCoordinator {
 
     @Override
     public void completeStage(StageId stageId) {
+        // Le premier clear de la Préhistoire débloque explicitement le Futur.
         if (stageId == StageId.PREHISTORY && !progression.isUnlocked(StageId.FUTURE)) {
             progression.unlock(StageId.FUTURE);
             router.show(new UnlockFlowState(StageId.FUTURE));
             return;
         }
 
+        // Sinon on termine simplement le run sur l'écran de fin.
         router.show(new EndFlowState(stageId, true));
     }
 

@@ -4,6 +4,7 @@ import io.github.some_example_name.game.WeaponType;
 import io.github.some_example_name.game.session.GameSession;
 import io.github.some_example_name.game.upgrade.UpgradeChoice;
 
+// Contrat minimal commun à toutes les armes du jeu.
 public interface Weapon {
     WeaponType getType();
 

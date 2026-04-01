@@ -19,7 +19,6 @@ import io.github.some_example_name.game.session.GameSession;
 
 public class EntityRenderer {
     private static final float PLAYER_DRAW_SIZE = 96f;
-    private static final Color SHADOW = new Color(0f, 0f, 0f, 0.20f);
     private static final Color XP_OUTER = new Color(0.35f, 0.96f, 0.78f, 1f);
     private static final Color XP_INNER = new Color(0.88f, 1f, 0.96f, 1f);
     private static final Color BLADE_OUTER = new Color(1f, 0.84f, 0.48f, 1f);
@@ -43,6 +42,7 @@ public class EntityRenderer {
     private static final Color HEALTH_ELITE = new Color(1f, 0.84f, 0.48f, 1f);
 
     public void draw(SpriteBatch batch, GameAssets assets, GameSession session) {
+        // Ordre volontaire : éléments bas au sol, menaces, tirs, joueur, puis armes orbitantes au-dessus.
         Texture whitePixel = assets.getWhitePixel();
         Texture softGlow = assets.getSoftGlow();
         drawExperience(batch, assets, session);
@@ -50,7 +50,7 @@ public class EntityRenderer {
         drawEnemies(batch, whitePixel, softGlow, assets, session);
         drawProjectiles(batch, whitePixel, softGlow, assets, session);
         drawOrbitBlades(batch, whitePixel, softGlow, assets, session);
-        drawPlayer(batch, assets, whitePixel, softGlow, session);
+        drawPlayer(batch, assets, softGlow, session);
         drawOrbitingSwords(batch, whitePixel, softGlow, assets, session);
         batch.setColor(Color.WHITE);
     }
@@ -77,6 +77,7 @@ public class EntityRenderer {
 
     private void drawEnemies(SpriteBatch batch, Texture whitePixel, Texture softGlow, GameAssets assets, GameSession session) {
         for (Enemy enemy : session.getEnemies()) {
+            // Le petit "bob" évite que les ennemis paraissent totalement figés.
             TextureRegion sprite = assets.getEnemySprite(enemy.archetype);
             Color primary = new Color(enemy.archetype.primaryColor);
             Color secondary = new Color(enemy.archetype.secondaryColor);
@@ -413,7 +414,7 @@ public class EntityRenderer {
         }
     }
 
-    private void drawPlayer(SpriteBatch batch, GameAssets assets, Texture whitePixel, Texture softGlow, GameSession session) {
+    private void drawPlayer(SpriteBatch batch, GameAssets assets, Texture softGlow, GameSession session) {
         Player player = session.getPlayer();
         Animation<TextureRegion> animation = assets.getCatAnimation(player.anim == CatAnim.RUN ? CatAnim.RUN : CatAnim.IDLE);
         TextureRegion frame = animation.getKeyFrame(player.animationTime);
@@ -429,6 +430,7 @@ public class EntityRenderer {
         }
 
         if (player.moving) {
+            // Courtes traînées pour mieux lire le déplacement du chat au milieu du chaos.
             for (int afterIndex = 2; afterIndex >= 1; afterIndex--) {
                 float alpha = 0.10f * afterIndex;
                 float offsetX = -player.movement.x * afterIndex * 8f;
@@ -451,6 +453,7 @@ public class EntityRenderer {
     }
 
     private void drawEnemyHealthBar(SpriteBatch batch, Texture whitePixel, Enemy enemy, float x, float y, float width) {
+        // Les élites gardent leur barre visible, même full life, pour les repérer immédiatement.
         if (!enemy.alive || (enemy.health >= enemy.archetype.maxHealth && !enemy.archetype.elite)) {
             return;
         }

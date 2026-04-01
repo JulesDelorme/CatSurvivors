@@ -5,6 +5,7 @@ import io.github.some_example_name.game.WeaponType;
 import io.github.some_example_name.game.session.GameSession;
 import io.github.some_example_name.game.upgrade.UpgradeChoice;
 
+// Arme persistante : elle n'émet pas de projectile, elle entretient des lames autour du joueur.
 public class OrbitWeapon extends AbstractWeapon {
     public OrbitWeapon(int startingLevel) {
         super(WeaponType.ORBIT_CLAWS, "Griffes orbitales", startingLevel);
@@ -17,6 +18,7 @@ public class OrbitWeapon extends AbstractWeapon {
             return;
         }
 
+        // Les stats des lames sont recalculées en continu pour refléter immédiatement les upgrades/passifs.
         int bladeCount = getBladeCount();
         float orbitRadius = getOrbitRadius();
         float bladeSize = getBladeSize();

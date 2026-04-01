@@ -26,8 +26,6 @@ public class GameAssets {
     private final TextureRegion[] futureTiles;
     private final Animation<TextureRegion> idleAnimation;
     private final Animation<TextureRegion> runAnimation;
-    private final Animation<TextureRegion> jumpAnimation;
-    private final Animation<TextureRegion> fallAnimation;
     private final TextureRegion[] ravenIcons;
     private final TextureRegion[] mageFocusIcons;
     private final TextureRegion[] mageBookIcons;
@@ -57,8 +55,6 @@ public class GameAssets {
         futureTiles = loadTiles("tilesets/future_tileset_32.png");
         idleAnimation = loadAnimation("characters/cat/cat_idle_sheet.png", 8, 0.15f);
         runAnimation = loadAnimation("characters/cat/cat_run_sheet.png", 10, 0.08f);
-        jumpAnimation = loadAnimation("characters/cat/cat_jump_sheet.png", 4, 0.12f);
-        fallAnimation = loadAnimation("characters/cat/cat_fall_sheet.png", 4, 0.12f);
         ravenIcons = loadRavenIcons();
         mageFocusIcons = loadTextureRegions(
             "sprites/projectiles/mage_diamond_red.png",
@@ -148,6 +144,7 @@ public class GameAssets {
     }
 
     private Texture createSoftGlow() {
+        // Halo procédural réutilisé partout : ambiance, lueurs d'UI, ombres douces.
         int size = 96;
         float radius = (size - 2) * 0.5f;
         float center = (size - 1) * 0.5f;
@@ -265,18 +262,6 @@ public class GameAssets {
             default:
                 return idleAnimation;
         }
-    }
-
-    public Animation<TextureRegion> getJumpAnimation() {
-        return jumpAnimation;
-    }
-
-    public Animation<TextureRegion> getFallAnimation() {
-        return fallAnimation;
-    }
-
-    public TextureRegion getWeaponIcon(WeaponType type) {
-        return getWeaponIcon(type, 1);
     }
 
     public TextureRegion getWeaponIcon(WeaponType type, int level) {

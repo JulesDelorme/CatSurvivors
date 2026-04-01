@@ -22,6 +22,7 @@ public class OverlayRenderer {
     private static final Color SUBTEXT = new Color(0.84f, 0.88f, 0.94f, 0.95f);
 
     public void layoutChoiceBounds(Array<Rectangle> bounds) {
+        // Les zones cliquables suivent exactement les cartes affichées par l'overlay de niveau.
         bounds.clear();
         float panelWidth = 960f;
         float cardWidth = 280f;
@@ -34,6 +35,7 @@ public class OverlayRenderer {
     }
 
     public void drawPause(SpriteBatch batch, BitmapFont font, GlyphLayout glyphLayout, Texture whitePixel, GameAssets assets) {
+        // Pause simple mais très lisible pour ne pas casser le rythme visuel du jeu.
         drawRect(batch, whitePixel, 0f, 0f, StageDefinition.WORLD_WIDTH, StageDefinition.WORLD_HEIGHT, OVERLAY);
         drawGlow(batch, assets, StageDefinition.WORLD_WIDTH * 0.5f, StageDefinition.WORLD_HEIGHT * 0.5f + 10f, 340f,
             new Color(0.58f, 0.84f, 1f, 1f), 0.12f);
@@ -48,6 +50,7 @@ public class OverlayRenderer {
 
     public void drawLevelUp(SpriteBatch batch, BitmapFont font, GlyphLayout glyphLayout, Texture whitePixel, GameAssets assets,
                             GameSession session, Array<Rectangle> bounds, int hoveredIndex) {
+        // L'overlay coupe l'action, mais garde la couleur du stage pour rester cohérent avec le run en cours.
         drawRect(batch, whitePixel, 0f, 0f, StageDefinition.WORLD_WIDTH, StageDefinition.WORLD_HEIGHT, OVERLAY);
 
         float panelWidth = 960f;

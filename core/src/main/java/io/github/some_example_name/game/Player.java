@@ -19,10 +19,6 @@ public class Player {
     public CatAnim anim = CatAnim.IDLE;
 
     public Player(float startX, float startY) {
-        reset(startX, startY);
-    }
-
-    public void reset(float startX, float startY) {
         position.set(startX, startY);
         movement.setZero();
         lastAimDirection.set(1f, 0f);

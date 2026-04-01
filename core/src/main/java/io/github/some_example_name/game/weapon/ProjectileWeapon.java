@@ -4,6 +4,7 @@ import io.github.some_example_name.game.WeaponType;
 import io.github.some_example_name.game.session.GameSession;
 import io.github.some_example_name.game.upgrade.UpgradeChoice;
 
+// Arme à cadence : à chaque cooldown écoulé, elle produit un ou plusieurs projectiles.
 public class ProjectileWeapon extends AbstractWeapon {
     public ProjectileWeapon(WeaponType type, String displayName, int startingLevel) {
         super(type, displayName, startingLevel);
@@ -15,6 +16,7 @@ public class ProjectileWeapon extends AbstractWeapon {
             return;
         }
         cooldownTimer -= delta;
+        // Le while permet d'absorber un gros delta sans "manger" un tir.
         while (cooldownTimer <= 0f) {
             cooldownTimer += getCooldown(session);
             fire(session);
@@ -30,6 +32,7 @@ public class ProjectileWeapon extends AbstractWeapon {
 
     @Override
     protected float getCooldown(GameSession session) {
+        // Chaque famille d'arme a ses propres paliers, puis le passif de cadence s'applique par-dessus.
         float base;
         switch (getType()) {
             case STONE_SPRAY:
@@ -50,6 +53,7 @@ public class ProjectileWeapon extends AbstractWeapon {
     }
 
     private void fire(GameSession session) {
+        // Le comportement de tir reste regroupé ici pour garder GameSession générique.
         switch (getType()) {
             case STONE_SPRAY:
                 session.fireAimedBurst(
@@ -532,6 +536,7 @@ public class ProjectileWeapon extends AbstractWeapon {
     }
 
     private String getDescription(int nextLevel) {
+        // Texte court affiché dans les cartes d'upgrade.
         switch (getType()) {
             case STONE_SPRAY:
                 switch (nextLevel) {

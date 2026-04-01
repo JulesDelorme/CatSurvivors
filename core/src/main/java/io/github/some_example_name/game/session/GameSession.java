@@ -1,10 +1,8 @@
 package io.github.some_example_name.game.session;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import io.github.some_example_name.game.Enemy;
-import io.github.some_example_name.game.EnemyArchetype;
 import io.github.some_example_name.game.ExperienceOrb;
 import io.github.some_example_name.game.FrostPatch;
 import io.github.some_example_name.game.OrbitBlade;
@@ -13,7 +11,6 @@ import io.github.some_example_name.game.Player;
 import io.github.some_example_name.game.Projectile;
 import io.github.some_example_name.game.WeaponType;
 import io.github.some_example_name.game.stage.StageDefinition;
-import io.github.some_example_name.game.upgrade.UpgradeCategory;
 import io.github.some_example_name.game.upgrade.UpgradeChoice;
 import io.github.some_example_name.game.weapon.OrbitWeapon;
 import io.github.some_example_name.game.weapon.ProjectileWeapon;
@@ -21,15 +18,8 @@ import io.github.some_example_name.game.weapon.Weapon;
 
 import java.util.EnumMap;
 
+// Porte tout l'état runtime d'une partie et délègue les gros blocs métier à des composants dédiés.
 public class GameSession {
-    private static final float BASE_PLAYER_SPEED = 280f;
-    private static final float BASE_PICKUP_MAGNET = 96f;
-    private static final float BASE_PICKUP_TOUCH = 24f;
-    private static final float ORBIT_HIT_COOLDOWN = 0.20f;
-    private static final float ENEMY_SPAWN_RADIUS_MIN = StageDefinition.WORLD_HEIGHT * 0.62f;
-    private static final float ENEMY_SPAWN_RADIUS_MAX = StageDefinition.WORLD_HEIGHT * 0.85f;
-    private static final float ENEMY_DESPAWN_RADIUS = StageDefinition.WORLD_WIDTH * 1.6f;
-
     private final StageDefinition stage;
     private final Player player = new Player(0f, 0f);
     private final Array<Enemy> enemies = new Array<Enemy>();
@@ -42,6 +32,9 @@ public class GameSession {
     private final EnumMap<PassiveType, Integer> passiveLevels = new EnumMap<PassiveType, Integer>(PassiveType.class);
     private final Vector2 attackDirectionBuffer = new Vector2();
     private final Vector2 weaponDirectionBuffer = new Vector2();
+    private final SessionUpgradeController upgradeController = new SessionUpgradeController();
+    private final SessionCombatResolver combatResolver = new SessionCombatResolver();
+    private final SessionSpawnController spawnController = new SessionSpawnController();
 
     private SessionState state = SessionState.RUNNING;
     private float survivalTime;
@@ -54,9 +47,6 @@ public class GameSession {
 
     public GameSession(StageDefinition stage) {
         this.stage = stage;
-        for (PassiveType type : PassiveType.values()) {
-            passiveLevels.put(type, 0);
-        }
 
         weapons.put(WeaponType.HAIRBALL, new ProjectileWeapon(WeaponType.HAIRBALL, "Canon à poils", 1));
         weapons.put(WeaponType.STONE_SPRAY, new ProjectileWeapon(WeaponType.STONE_SPRAY, "Livre de mage", 0));
@@ -64,9 +54,8 @@ public class GameSession {
         weapons.put(WeaponType.FROST_BOMB, new ProjectileWeapon(WeaponType.FROST_BOMB, "Bombe givrante", 0));
         weapons.put(WeaponType.ORBIT_CLAWS, new OrbitWeapon(0));
 
-        xpToNextLevel = getXpThreshold(level);
-        refreshDerivedStats();
-        spawnTimer = stage.getSpawnInterval(0f) * 0.8f;
+        upgradeController.initialize(this);
+        spawnController.initialize(this);
     }
 
     public StageDefinition getStage() {
@@ -146,55 +135,43 @@ public class GameSession {
             return;
         }
 
+        // On borne le delta pour éviter les grosses accélérations si le framerate chute brutalement.
         float frameDelta = Math.min(delta, 1f / 20f);
-        survivalTime += frameDelta;
-
+        addSurvivalTimeInternal(frameDelta);
         player.update(frameDelta);
 
-        updateExperienceOrbs(frameDelta);
+        combatResolver.updateExperienceOrbs(this, frameDelta);
         if (state != SessionState.RUNNING) {
             return;
         }
 
+        // Les armes jouent d'abord, puis le monde avance et résout les collisions.
         for (Weapon weapon : weapons.values()) {
             weapon.update(this, frameDelta);
         }
 
-        updateProjectiles(frameDelta);
-        updateFrostPatches(frameDelta);
-        updateEnemies(frameDelta);
-        resolveProjectileHits();
-        resolveOrbitHits();
-        removeInactiveEntities();
-        applyContactDamage(frameDelta);
+        combatResolver.advanceWorld(this, frameDelta);
         if (state != SessionState.RUNNING) {
             return;
         }
 
-        triggerFinalWaveIfNeeded();
-        if (!finalWaveTriggered) {
-            spawnEnemies(frameDelta);
-        }
-
-        if (survivalTime >= stage.durationSeconds && finalWaveTriggered && !hasEliteAlive()) {
-            state = SessionState.WON;
-        }
+        spawnController.advance(this, frameDelta);
     }
 
     public float getDamageMultiplier() {
-        return 1f + getPassiveLevel(PassiveType.DAMAGE) * 0.18f;
+        return upgradeController.getDamageMultiplier(this);
     }
 
     public float getAttackSpeedFactor() {
-        return Math.max(0.55f, 1f - getPassiveLevel(PassiveType.ATTACK_SPEED) * 0.08f);
+        return upgradeController.getAttackSpeedFactor(this);
     }
 
     public float getPickupMagnetRadius() {
-        return BASE_PICKUP_MAGNET + getPassiveLevel(PassiveType.MAGNET) * 30f;
+        return upgradeController.getPickupMagnetRadius(this);
     }
 
     public float getPickupTouchRadius() {
-        return BASE_PICKUP_TOUCH + getPassiveLevel(PassiveType.MAGNET) * 3f;
+        return upgradeController.getPickupTouchRadius(this);
     }
 
     public Array<Weapon> getOwnedWeapons() {
@@ -213,50 +190,15 @@ public class GameSession {
     }
 
     public int getPassiveLevel(PassiveType passiveType) {
-        Integer value = passiveLevels.get(passiveType);
-        return value == null ? 0 : value;
+        return upgradeController.getPassiveLevel(this, passiveType);
     }
 
     public void chooseUpgrade(int index) {
-        if (state != SessionState.LEVEL_UP || index < 0 || index >= levelChoices.size) {
-            return;
-        }
-
-        UpgradeChoice choice = levelChoices.get(index);
-        if (choice.category == UpgradeCategory.WEAPON) {
-            weapons.get(choice.weaponType).applyUpgrade(this);
-        } else {
-            applyPassiveUpgrade(choice.passiveType);
-        }
-
-        pendingLevelUps--;
-        if (pendingLevelUps > 0) {
-            openLevelChoices();
-        } else {
-            levelChoices.clear();
-            state = SessionState.RUNNING;
-        }
+        upgradeController.chooseUpgrade(this, index);
     }
 
     public Enemy findNearestEnemy(float radius) {
-        float maxDistanceSquared = radius * radius;
-        Enemy closest = null;
-        float closestDistanceSquared = Float.MAX_VALUE;
-
-        for (Enemy enemy : enemies) {
-            if (!enemy.alive) {
-                continue;
-            }
-
-            float distanceSquared = enemy.position.dst2(player.position);
-            if (distanceSquared > maxDistanceSquared || distanceSquared >= closestDistanceSquared) {
-                continue;
-            }
-
-            closest = enemy;
-            closestDistanceSquared = distanceSquared;
-        }
-        return closest;
+        return combatResolver.findNearestEnemy(this, radius);
     }
 
     public void fireAimedBurst(int projectileCount, float spreadDegrees, float speed, float radius, float damage,
@@ -270,381 +212,91 @@ public class GameSession {
                                int remainingHits, float maxDistance, WeaponType weaponType, int weaponLevel,
                                float aimRange, float spawnDistance, float splashRadius, float frostPatchRadius,
                                float frostPatchDuration, float frostSlowMultiplier) {
-        Enemy target = findNearestEnemy(aimRange);
-        if (target != null) {
-            attackDirectionBuffer.set(target.position).sub(player.position).nor();
-        } else {
-            attackDirectionBuffer.set(player.lastAimDirection);
-        }
-
-        if (attackDirectionBuffer.isZero(0.001f)) {
-            attackDirectionBuffer.set(1f, 0f);
-        }
-
-        for (int index = 0; index < projectileCount; index++) {
-            float spreadOffset = (index - (projectileCount - 1) * 0.5f) * spreadDegrees;
-            weaponDirectionBuffer.set(attackDirectionBuffer).rotateDeg(spreadOffset);
-            float startX = player.position.x + weaponDirectionBuffer.x * spawnDistance;
-            float startY = player.position.y + 4f + weaponDirectionBuffer.y * spawnDistance;
-            projectiles.add(new Projectile(
-                startX,
-                startY,
-                weaponDirectionBuffer,
-                speed,
-                radius,
-                damage,
-                remainingHits,
-                maxDistance,
-                weaponType,
-                weaponLevel,
-                splashRadius,
-                frostPatchRadius,
-                frostPatchDuration,
-                frostSlowMultiplier
-            ));
-        }
+        combatResolver.fireAimedBurst(this, projectileCount, spreadDegrees, speed, radius, damage, remainingHits,
+            maxDistance, weaponType, weaponLevel, aimRange, spawnDistance, splashRadius, frostPatchRadius,
+            frostPatchDuration, frostSlowMultiplier);
     }
 
     public void fireRadialBurst(int projectileCount, float speed, float radius, float damage, int remainingHits,
                                 float maxDistance, WeaponType weaponType, int weaponLevel) {
-        float startAngle = MathUtils.random(0f, 359f);
-        for (int index = 0; index < projectileCount; index++) {
-            float angle = startAngle + 360f * index / projectileCount;
-            weaponDirectionBuffer.set(1f, 0f).setAngleDeg(angle);
-            projectiles.add(new Projectile(
-                player.position.x,
-                player.position.y,
-                weaponDirectionBuffer,
-                speed,
-                radius,
-                damage,
-                remainingHits,
-                maxDistance,
-                weaponType,
-                weaponLevel,
-                0f,
-                0f,
-                0f,
-                0f
-            ));
-        }
+        combatResolver.fireRadialBurst(this, projectileCount, speed, radius, damage, remainingHits, maxDistance,
+            weaponType, weaponLevel);
     }
 
     public void ensureOrbitBladeCount(int count, float orbitRadius, float bladeSize, float damage) {
-        while (orbitBlades.size < count) {
-            float angle = 360f * orbitBlades.size / Math.max(1, count);
-            orbitBlades.add(new OrbitBlade(angle, orbitRadius, bladeSize, damage));
-        }
-        while (orbitBlades.size > count) {
-            orbitBlades.removeIndex(orbitBlades.size - 1);
-        }
+        combatResolver.ensureOrbitBladeCount(this, count, orbitRadius, bladeSize, damage);
     }
 
-    private void refreshDerivedStats() {
-        float previousMaxHealth = player.maxHealth;
-        player.maxHealth = Player.BASE_MAX_HEALTH + getPassiveLevel(PassiveType.VITALITY) * 20f;
-        player.speed = BASE_PLAYER_SPEED + getPassiveLevel(PassiveType.SPEED) * 28f;
-        if (previousMaxHealth == 0f) {
-            player.health = player.maxHealth;
-        } else {
-            player.health = Math.min(player.health, player.maxHealth);
-        }
+    // API interne utilisée par les composants de session.
+    EnumMap<WeaponType, Weapon> weaponRegistry() {
+        return weapons;
     }
 
-    private void applyPassiveUpgrade(PassiveType passiveType) {
-        passiveLevels.put(passiveType, Math.min(5, getPassiveLevel(passiveType) + 1));
-        float previousMaxHealth = player.maxHealth;
-        refreshDerivedStats();
-        if (passiveType == PassiveType.VITALITY) {
-            player.health = Math.min(player.maxHealth, Math.max(player.health, previousMaxHealth) + 20f);
-        }
+    EnumMap<PassiveType, Integer> passiveLevelRegistry() {
+        return passiveLevels;
     }
 
-    private void updateExperienceOrbs(float delta) {
-        float magnetRadius = getPickupMagnetRadius();
-        float pickupTouchRadius = getPickupTouchRadius();
-
-        for (ExperienceOrb orb : experienceOrbs) {
-            if (!orb.active) {
-                continue;
-            }
-            orb.update(player.position, magnetRadius, delta);
-            if (orb.overlaps(player.position, pickupTouchRadius)) {
-                orb.active = false;
-                addExperience(orb.value);
-                if (state == SessionState.LEVEL_UP) {
-                    break;
-                }
-            }
-        }
-
-        for (int index = experienceOrbs.size - 1; index >= 0; index--) {
-            if (!experienceOrbs.get(index).active) {
-                experienceOrbs.removeIndex(index);
-            }
-        }
+    Vector2 attackDirectionBufferInternal() {
+        return attackDirectionBuffer;
     }
 
-    private void addExperience(int amount) {
-        currentXp += amount;
-        while (currentXp >= xpToNextLevel) {
-            currentXp -= xpToNextLevel;
-            level++;
-            pendingLevelUps++;
-            xpToNextLevel = getXpThreshold(level);
-        }
-
-        if (pendingLevelUps > 0) {
-            openLevelChoices();
-        }
+    Vector2 weaponDirectionBufferInternal() {
+        return weaponDirectionBuffer;
     }
 
-    private float getXpThreshold(int currentLevel) {
-        return 8f + (currentLevel - 1) * 5f;
+    void setStateInternal(SessionState state) {
+        this.state = state;
     }
 
-    private void updateProjectiles(float delta) {
-        for (Projectile projectile : projectiles) {
-            if (!projectile.active) {
-                continue;
-            }
-            projectile.update(delta);
-            if (!projectile.active && projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
-                spawnFrostPatch(projectile);
-            }
-            if (projectile.position.dst2(player.position) > ENEMY_DESPAWN_RADIUS * ENEMY_DESPAWN_RADIUS) {
-                projectile.active = false;
-                if (projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
-                    spawnFrostPatch(projectile);
-                }
-            }
-        }
+    void addSurvivalTimeInternal(float delta) {
+        survivalTime += delta;
     }
 
-    private void updateFrostPatches(float delta) {
-        for (FrostPatch patch : frostPatches) {
-            patch.update(delta);
-        }
-        for (int index = frostPatches.size - 1; index >= 0; index--) {
-            if (frostPatches.get(index).isExpired()) {
-                frostPatches.removeIndex(index);
-            }
-        }
+    float getSpawnTimerInternal() {
+        return spawnTimer;
     }
 
-    private void updateEnemies(float delta) {
-        float speedBonus = stage.getSpeedBonus(survivalTime);
-        for (Enemy enemy : enemies) {
-            if (enemy.alive) {
-                enemy.update(player.position, speedBonus, getEnemySpeedMultiplier(enemy), delta);
-            }
-        }
+    void setSpawnTimerInternal(float spawnTimer) {
+        this.spawnTimer = spawnTimer;
     }
 
-    private float getEnemySpeedMultiplier(Enemy enemy) {
-        float speedMultiplier = 1f;
-        for (FrostPatch patch : frostPatches) {
-            if (!patch.overlaps(enemy.position, enemy.archetype.radius)) {
-                continue;
-            }
-            speedMultiplier = Math.min(speedMultiplier, patch.slowMultiplier);
-            enemy.applyChill(0.35f);
-        }
-        return speedMultiplier;
+    void setCurrentXpInternal(float currentXp) {
+        this.currentXp = currentXp;
     }
 
-    private void resolveProjectileHits() {
-        for (Projectile projectile : projectiles) {
-            if (!projectile.active) {
-                continue;
-            }
-            for (Enemy enemy : enemies) {
-                if (!enemy.alive || !projectile.overlaps(enemy)) {
-                    continue;
-                }
-                if (projectile.splashRadius > 0f) {
-                    explodeProjectile(projectile);
-                    break;
-                }
-                if (enemy.applyDamage(projectile.damage)) {
-                    spawnExperienceOrb(enemy);
-                }
-                if (projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
-                    spawnFrostPatch(projectile);
-                }
-                projectile.registerHit();
-                if (!projectile.active) {
-                    break;
-                }
-            }
-        }
+    void setXpToNextLevelInternal(float xpToNextLevel) {
+        this.xpToNextLevel = xpToNextLevel;
     }
 
-    private void explodeProjectile(Projectile projectile) {
-        float splashRadiusSquared = projectile.splashRadius * projectile.splashRadius;
-        for (Enemy enemy : enemies) {
-            if (!enemy.alive) {
-                continue;
-            }
-            float combinedRadius = projectile.splashRadius + enemy.archetype.radius;
-            if (projectile.position.dst2(enemy.position) > Math.max(splashRadiusSquared, combinedRadius * combinedRadius)) {
-                continue;
-            }
-            if (enemy.applyDamage(projectile.damage)) {
-                spawnExperienceOrb(enemy);
-            }
-        }
-        if (projectile.hasFrostPatch() && !projectile.frostPatchSpawned) {
-            spawnFrostPatch(projectile);
-        }
-        projectile.active = false;
+    void incrementLevelInternal() {
+        level++;
     }
 
-    private void spawnFrostPatch(Projectile projectile) {
-        frostPatches.add(new FrostPatch(
-            projectile.position.x,
-            projectile.position.y,
-            projectile.frostPatchRadius,
-            projectile.frostPatchDuration,
-            projectile.frostSlowMultiplier
-        ));
-        projectile.frostPatchSpawned = true;
+    int getPendingLevelUpsInternal() {
+        return pendingLevelUps;
     }
 
-    private void resolveOrbitHits() {
-        if (orbitBlades.size == 0) {
-            return;
-        }
-
-        for (OrbitBlade blade : orbitBlades) {
-            for (Enemy enemy : enemies) {
-                if (!enemy.alive || enemy.orbitDamageCooldown > 0f) {
-                    continue;
-                }
-                float combined = blade.size + enemy.archetype.radius;
-                if (blade.position.dst2(enemy.position) > combined * combined) {
-                    continue;
-                }
-                enemy.orbitDamageCooldown = ORBIT_HIT_COOLDOWN;
-                if (enemy.applyDamage(blade.damage)) {
-                    spawnExperienceOrb(enemy);
-                }
-            }
-        }
+    void incrementPendingLevelUpsInternal() {
+        pendingLevelUps++;
     }
 
-    private void spawnExperienceOrb(Enemy enemy) {
-        experienceOrbs.add(new ExperienceOrb(enemy.position.x, enemy.position.y, enemy.archetype.xpValue));
+    void decrementPendingLevelUpsInternal() {
+        pendingLevelUps--;
     }
 
-    private void removeInactiveEntities() {
-        for (int index = projectiles.size - 1; index >= 0; index--) {
-            if (!projectiles.get(index).active) {
-                projectiles.removeIndex(index);
-            }
-        }
-        for (int index = enemies.size - 1; index >= 0; index--) {
-            Enemy enemy = enemies.get(index);
-            if (!enemy.alive || (!enemy.archetype.elite && enemy.position.dst2(player.position) > ENEMY_DESPAWN_RADIUS * ENEMY_DESPAWN_RADIUS)) {
-                enemies.removeIndex(index);
-            }
-        }
+    boolean isFinalWaveTriggeredInternal() {
+        return finalWaveTriggered;
     }
 
-    private void applyContactDamage(float delta) {
-        float damageThisFrame = 0f;
-        for (Enemy enemy : enemies) {
-            if (enemy.alive && enemy.overlaps(player.position, player.radius)) {
-                damageThisFrame += enemy.archetype.contactDamagePerSecond * delta;
-            }
-        }
-
-        if (damageThisFrame <= 0f) {
-            return;
-        }
-
-        player.health = Math.max(0f, player.health - damageThisFrame);
-        player.hitFlashTime = 1f;
-        if (player.health <= 0f) {
-            state = SessionState.LOST;
-        }
+    void setFinalWaveTriggeredInternal(boolean finalWaveTriggered) {
+        this.finalWaveTriggered = finalWaveTriggered;
     }
 
-    private void spawnEnemies(float delta) {
-        spawnTimer -= delta;
-        float spawnInterval = stage.getSpawnInterval(survivalTime);
-        while (spawnTimer <= 0f) {
-            spawnTimer += spawnInterval;
-            if (enemies.size < stage.getMaxEnemies(survivalTime)) {
-                spawnEnemy(stage.pickEnemyArchetype(survivalTime));
-            }
-        }
-    }
-
-    private void spawnEnemy(EnemyArchetype archetype) {
-        float angle = MathUtils.random(0f, 359f);
-        float radius = MathUtils.random(ENEMY_SPAWN_RADIUS_MIN, ENEMY_SPAWN_RADIUS_MAX);
-        float spawnX = player.position.x + MathUtils.cosDeg(angle) * radius;
-        float spawnY = player.position.y + MathUtils.sinDeg(angle) * radius;
-        enemies.add(new Enemy(archetype, spawnX, spawnY));
-    }
-
-    private void triggerFinalWaveIfNeeded() {
-        if (finalWaveTriggered || survivalTime < stage.getFinalWaveStart()) {
-            return;
-        }
-        finalWaveTriggered = true;
-        spawnEnemy(stage.elite);
-        for (int index = 0; index < stage.finalWaveSupportCount; index++) {
-            EnemyArchetype support = index % 2 == 0 ? stage.runner : stage.tank;
-            spawnEnemy(support);
-        }
-    }
-
-    private boolean hasEliteAlive() {
-        for (Enemy enemy : enemies) {
-            if (enemy.alive && enemy.archetype.elite) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void openLevelChoices() {
+    void clearLevelChoicesInternal() {
         levelChoices.clear();
-        Array<UpgradeChoice> available = new Array<UpgradeChoice>();
-        for (Weapon weapon : weapons.values()) {
-            if (weapon.canOfferUpgrade()) {
-                available.add(weapon.buildChoice(this));
-            }
-        }
-        for (PassiveType passiveType : PassiveType.values()) {
-            if (getPassiveLevel(passiveType) < 5) {
-                available.add(buildPassiveChoice(passiveType));
-            }
-        }
-
-        while (levelChoices.size < 3 && available.size > 0) {
-            levelChoices.add(available.removeIndex(MathUtils.random(available.size - 1)));
-        }
-
-        state = SessionState.LEVEL_UP;
     }
 
-    private UpgradeChoice buildPassiveChoice(PassiveType passiveType) {
-        int nextLevel = getPassiveLevel(passiveType) + 1;
-        switch (passiveType) {
-            case SPEED:
-                return new UpgradeChoice(passiveType, "Patounes rapides niv. " + nextLevel, "+28 vitesse de déplacement.", nextLevel);
-            case DAMAGE:
-                return new UpgradeChoice(passiveType, "Griffes affûtées niv. " + nextLevel, "+18% dégâts sur toutes les armes.", nextLevel);
-            case ATTACK_SPEED:
-                return new UpgradeChoice(passiveType, "Instinct nerveux niv. " + nextLevel, "Réduit le délai entre les attaques.", nextLevel);
-            case MAGNET:
-                return new UpgradeChoice(passiveType, "Moustaches aimantées niv. " + nextLevel, "+30 rayon d'aspiration d'XP.", nextLevel);
-            case VITALITY:
-            default:
-                return new UpgradeChoice(passiveType, "Vitalité niv. " + nextLevel, "+20 PV max et soin immédiat.", nextLevel);
-        }
+    void gainExperienceInternal(int amount) {
+        upgradeController.gainExperience(this, amount);
     }
 }

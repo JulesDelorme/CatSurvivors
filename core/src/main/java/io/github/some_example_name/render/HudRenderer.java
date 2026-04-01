@@ -21,6 +21,7 @@ public class HudRenderer {
 
     public void draw(SpriteBatch batch, BitmapFont font, GlyphLayout glyphLayout, Texture whitePixel, GameAssets assets,
                      GameSession session) {
+        // HUD découpé en trois blocs : état joueur, progression du run, inventaire/passifs.
         Color panelColor = session.getStage().panelColor;
         Color accentColor = session.getStage().accentColor;
 
@@ -116,6 +117,7 @@ public class HudRenderer {
 
     private void drawFramedBar(SpriteBatch batch, Texture whitePixel, float x, float y, float width, float height,
                                float ratio, Color fillColor, Color accentColor) {
+        // Les barres ont un léger cadre pour mieux ressortir sur les maps chargées.
         drawRect(batch, whitePixel, x - 2f, y - 2f, width + 4f, height + 4f, PANEL_SHADOW);
         drawRect(batch, whitePixel, x, y, width, height, BAR_BG);
         drawRect(batch, whitePixel, x, y + height - 2f, width, 2f, new Color(accentColor.r, accentColor.g, accentColor.b, 0.25f));

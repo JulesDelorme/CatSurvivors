@@ -20,6 +20,7 @@ import io.github.some_example_name.screen.GameScreen;
 import io.github.some_example_name.screen.MenuScreen;
 import io.github.some_example_name.screen.UnlockScreen;
 
+// Point d'entrée partagé des écrans : services globaux, assets et routage de navigation.
 public class GameContext implements AppFlowRouter {
     public final Main game;
     public final SpriteBatch batch = new SpriteBatch();
@@ -27,6 +28,7 @@ public class GameContext implements AppFlowRouter {
     public final GlyphLayout glyphLayout = new GlyphLayout();
     public final GameAssets assets = new GameAssets();
     private final ProgressStore progressStore = new ProgressStore();
+    // Le coordinateur contient la logique de flux, les écrans se contentent ensuite d'afficher et d'interagir.
     private final AppFlowCoordinator flow = new DefaultAppFlowCoordinator(this, progressStore);
 
     public GameContext(Main game) {
@@ -44,6 +46,7 @@ public class GameContext implements AppFlowRouter {
 
     @Override
     public void show(AppFlowState state) {
+        // Conversion entre un état abstrait de l'application et un écran LibGDX concret.
         if (state instanceof MenuFlowState) {
             game.replaceScreen(new MenuScreen(this));
             return;

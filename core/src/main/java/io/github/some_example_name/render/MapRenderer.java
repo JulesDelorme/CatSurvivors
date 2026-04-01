@@ -19,6 +19,7 @@ public class MapRenderer {
     private static final Color FUTURE_VIOLET = new Color(0.54f, 0.48f, 0.92f, 1f);
 
     public void draw(SpriteBatch batch, GameAssets assets, StageDefinition stage, OrthographicCamera camera) {
+        // Rendu en couches : ambiance de fond, tuiles visibles, puis décor/voile avant-plan.
         Texture whitePixel = assets.getWhitePixel();
         Texture softGlow = assets.getSoftGlow();
         TextureRegion[] tiles = assets.getTiles(stage.tilesetType);
@@ -48,6 +49,7 @@ public class MapRenderer {
 
     private void drawBackdrop(SpriteBatch batch, Texture whitePixel, Texture softGlow, StageDefinition stage,
                               OrthographicCamera camera) {
+        // Fond large et légèrement flottant pour éviter un rendu trop plat derrière la carte.
         float left = camera.position.x - StageDefinition.WORLD_WIDTH * 0.68f;
         float bottom = camera.position.y - StageDefinition.WORLD_HEIGHT * 0.68f;
         float width = StageDefinition.WORLD_WIDTH * 1.36f;
@@ -76,6 +78,7 @@ public class MapRenderer {
 
     private void drawTileMood(SpriteBatch batch, Texture whitePixel, Texture softGlow, StageDefinition stage, int tileIndex,
                               float tileX, float tileY, long noise) {
+        // Micro-variations visuelles par case pour casser l'aspect quadrillé de la map.
         float darkness = 0.022f + (noise & 3L) * 0.008f;
         batch.setColor(0f, 0f, 0f, darkness);
         batch.draw(whitePixel, tileX, tileY, StageDefinition.TILE_SIZE, StageDefinition.TILE_SIZE);
@@ -98,6 +101,7 @@ public class MapRenderer {
 
     private void drawStageDecor(SpriteBatch batch, GameAssets assets, StageDefinition stage, Texture whitePixel,
                                 Texture softGlow, int startCol, int endCol, int startRow, int endRow) {
+        // Décor secondaire déterministe pour garder une impression de terrain riche sans stocker une grande carte.
         TextureRegion[] props = assets.getStageProps(stage.tilesetType);
         TextureRegion decal = assets.getStageGroundDecal(stage.tilesetType);
         if (props.length == 0 || decal == null) {
