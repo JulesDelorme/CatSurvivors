@@ -3,7 +3,9 @@ package io.github.some_example_name.game.weapon;
 import io.github.some_example_name.game.WeaponType;
 import io.github.some_example_name.game.session.GameSession;
 
-// Base commune : niveau, cooldown et logique de montée en rang.
+/**
+ * Base commune : niveau, cooldown et logique de montée en rang.
+ */
 abstract class AbstractWeapon implements Weapon {
     private final WeaponType type;
     private final String displayName;
@@ -47,7 +49,6 @@ abstract class AbstractWeapon implements Weapon {
         if (!canOfferUpgrade()) {
             return;
         }
-        // Chaque niveau est appliqué ici, les sous-classes réagissent ensuite si besoin.
         level++;
         onLevelChanged(session);
     }

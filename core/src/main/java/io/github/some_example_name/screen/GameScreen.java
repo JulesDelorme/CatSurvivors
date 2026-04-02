@@ -41,7 +41,7 @@ public class GameScreen extends ScreenAdapter {
         this.stage = stage;
         session = new GameSession(stage);
         overlayRenderer.layoutChoiceBounds(choiceBounds);
-        camera.position.set(session.getPlayer().position.x, session.getPlayer().position.y, 0f);
+        camera.position.set(session.getPlayer().getPosition().x, session.getPlayer().getPosition().y, 0f);
     }
 
     @Override
@@ -49,29 +49,32 @@ public class GameScreen extends ScreenAdapter {
         handleInput();
         session.update(delta);
 
-        Gdx.gl.glClearColor(stage.backgroundColor.r, stage.backgroundColor.g, stage.backgroundColor.b, stage.backgroundColor.a);
+        Gdx.gl.glClearColor(stage.getBackgroundColor().r, stage.getBackgroundColor().g, stage.getBackgroundColor().b,
+            stage.getBackgroundColor().a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        camera.position.set(session.getPlayer().position.x, session.getPlayer().position.y, 0f);
+        camera.position.set(session.getPlayer().getPosition().x, session.getPlayer().getPosition().y, 0f);
         viewport.apply();
         camera.update();
 
-        context.batch.setProjectionMatrix(camera.combined);
-        context.batch.begin();
-        mapRenderer.draw(context.batch, context.assets, stage, camera);
-        entityRenderer.draw(context.batch, context.assets, session);
-        context.batch.end();
+        context.getBatch().setProjectionMatrix(camera.combined);
+        context.getBatch().begin();
+        mapRenderer.draw(context.getBatch(), context.getAssets(), stage, camera);
+        entityRenderer.draw(context.getBatch(), context.getAssets(), session);
+        context.getBatch().end();
 
         hudMatrix.setToOrtho2D(0f, 0f, StageDefinition.WORLD_WIDTH, StageDefinition.WORLD_HEIGHT);
-        context.batch.setProjectionMatrix(hudMatrix);
-        context.batch.begin();
-        hudRenderer.draw(context.batch, context.font, context.glyphLayout, context.assets.getWhitePixel(), context.assets, session);
+        context.getBatch().setProjectionMatrix(hudMatrix);
+        context.getBatch().begin();
+        hudRenderer.draw(context.getBatch(), context.getFont(), context.getGlyphLayout(), context.getAssets().getWhitePixel(),
+            context.getAssets(), session);
         if (session.getState() == SessionState.PAUSED) {
-            overlayRenderer.drawPause(context.batch, context.font, context.glyphLayout, context.assets.getWhitePixel(), context.assets);
+            overlayRenderer.drawPause(context.getBatch(), context.getFont(), context.getGlyphLayout(),
+                context.getAssets().getWhitePixel(), context.getAssets());
         } else if (session.getState() == SessionState.LEVEL_UP) {
-            overlayRenderer.drawLevelUp(context.batch, context.font, context.glyphLayout, context.assets.getWhitePixel(),
-                context.assets, session, choiceBounds, hoveredChoiceIndex());
+            overlayRenderer.drawLevelUp(context.getBatch(), context.getFont(), context.getGlyphLayout(),
+                context.getAssets().getWhitePixel(), context.getAssets(), session, choiceBounds, hoveredChoiceIndex());
         }
-        context.batch.end();
+        context.getBatch().end();
 
         routeIfFinished();
     }
@@ -157,7 +160,7 @@ public class GameScreen extends ScreenAdapter {
 
         if (session.isLost()) {
             routed = true;
-            context.flow().failStage(stage.id);
+            context.flow().failStage(stage.getId());
             return;
         }
 
@@ -166,7 +169,7 @@ public class GameScreen extends ScreenAdapter {
         }
 
         routed = true;
-        context.flow().completeStage(stage.id);
+        context.flow().completeStage(stage.getId());
     }
 
     @Override

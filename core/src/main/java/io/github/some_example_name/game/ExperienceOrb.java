@@ -3,10 +3,10 @@ package io.github.some_example_name.game;
 import com.badlogic.gdx.math.Vector2;
 
 public class ExperienceOrb {
-    public final Vector2 position = new Vector2();
-    public final int value;
-    public boolean active = true;
-    public float pulseTime;
+    private final Vector2 position = new Vector2();
+    private final int value;
+    private boolean active = true;
+    private float pulseTime;
 
     public ExperienceOrb(float startX, float startY, int value) {
         position.set(startX, startY);
@@ -30,5 +30,25 @@ public class ExperienceOrb {
 
     public boolean overlaps(Vector2 playerPosition, float pickupRadius) {
         return position.dst2(playerPosition) < pickupRadius * pickupRadius;
+    }
+
+    public Vector2 getPosition() {
+        return position;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void deactivate() {
+        active = false;
+    }
+
+    public float getPulseTime() {
+        return pulseTime;
     }
 }

@@ -3,19 +3,19 @@ package io.github.some_example_name.game;
 import com.badlogic.gdx.math.Vector2;
 
 public class Enemy {
-    public final Vector2 position = new Vector2();
-    public final EnemyArchetype archetype;
-    public float health;
-    public boolean alive = true;
-    public float animationTime;
-    public float hitFlashTime;
-    public float orbitDamageCooldown;
-    public float chilledTime;
+    private final Vector2 position = new Vector2();
+    private final EnemyArchetype archetype;
+    private float health;
+    private boolean alive = true;
+    private float animationTime;
+    private float hitFlashTime;
+    private float orbitDamageCooldown;
+    private float chilledTime;
 
     public Enemy(EnemyArchetype archetype, float startX, float startY) {
         this.archetype = archetype;
         position.set(startX, startY);
-        health = archetype.maxHealth;
+        health = archetype.getMaxHealth();
     }
 
     public void update(Vector2 target, float additionalSpeed, float speedMultiplier, float delta) {
@@ -32,11 +32,11 @@ public class Enemy {
         }
 
         float length = (float) Math.sqrt(lengthSquared);
-        float speed = (archetype.baseSpeed + additionalSpeed) * speedMultiplier;
-        if (archetype.burstEvery > 0f) {
-            float cycle = animationTime % archetype.burstEvery;
-            if (cycle <= archetype.burstDuration) {
-                speed *= archetype.burstMultiplier;
+        float speed = (archetype.getBaseSpeed() + additionalSpeed) * speedMultiplier;
+        if (archetype.getBurstEvery() > 0f) {
+            float cycle = animationTime % archetype.getBurstEvery();
+            if (cycle <= archetype.getBurstDuration()) {
+                speed *= archetype.getBurstMultiplier();
             }
         }
         position.x += deltaX / length * speed * delta;
@@ -44,7 +44,7 @@ public class Enemy {
     }
 
     public boolean overlaps(Vector2 target, float targetRadius) {
-        float combinedRadius = archetype.radius + targetRadius;
+        float combinedRadius = archetype.getRadius() + targetRadius;
         return position.dst2(target) < combinedRadius * combinedRadius;
     }
 
@@ -65,5 +65,41 @@ public class Enemy {
 
     public void applyChill(float duration) {
         chilledTime = Math.max(chilledTime, duration);
+    }
+
+    public Vector2 getPosition() {
+        return position;
+    }
+
+    public EnemyArchetype getArchetype() {
+        return archetype;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public boolean isAlive() {
+        return alive;
+    }
+
+    public float getAnimationTime() {
+        return animationTime;
+    }
+
+    public float getHitFlashTime() {
+        return hitFlashTime;
+    }
+
+    public float getOrbitDamageCooldown() {
+        return orbitDamageCooldown;
+    }
+
+    public void startOrbitDamageCooldown(float cooldown) {
+        orbitDamageCooldown = Math.max(0f, cooldown);
+    }
+
+    public float getChilledTime() {
+        return chilledTime;
     }
 }

@@ -4,19 +4,23 @@ import io.github.some_example_name.game.WeaponType;
 import io.github.some_example_name.game.session.GameSession;
 import io.github.some_example_name.game.upgrade.UpgradeChoice;
 
-// Arme à cadence : à chaque cooldown écoulé, elle produit un ou plusieurs projectiles.
+/**
+ * Arme à cadence : à chaque cooldown écoulé, elle produit un ou plusieurs projectiles.
+ */
 public class ProjectileWeapon extends AbstractWeapon {
     public ProjectileWeapon(WeaponType type, String displayName, int startingLevel) {
         super(type, displayName, startingLevel);
     }
 
+    /**
+     * Déclenche autant de tirs que nécessaire pour absorber proprement un grand delta.
+     */
     @Override
     public void update(GameSession session, float delta) {
         if (!isUnlocked()) {
             return;
         }
         cooldownTimer -= delta;
-        // Le while permet d'absorber un gros delta sans "manger" un tir.
         while (cooldownTimer <= 0f) {
             cooldownTimer += getCooldown(session);
             fire(session);
@@ -30,9 +34,11 @@ public class ProjectileWeapon extends AbstractWeapon {
         return new UpgradeChoice(getType(), title, getDescription(nextLevel), nextLevel);
     }
 
+    /**
+     * Calcule le cooldown courant de l'arme en combinant ses paliers et le passif de cadence.
+     */
     @Override
     protected float getCooldown(GameSession session) {
-        // Chaque famille d'arme a ses propres paliers, puis le passif de cadence s'applique par-dessus.
         float base;
         switch (getType()) {
             case STONE_SPRAY:
@@ -52,8 +58,10 @@ public class ProjectileWeapon extends AbstractWeapon {
         return base * session.getAttackSpeedFactor();
     }
 
+    /**
+     * Déclenche le comportement de tir spécifique au type d'arme tout en gardant {@link GameSession} générique.
+     */
     private void fire(GameSession session) {
-        // Le comportement de tir reste regroupé ici pour garder GameSession générique.
         switch (getType()) {
             case STONE_SPRAY:
                 session.fireAimedBurst(
@@ -535,8 +543,10 @@ public class ProjectileWeapon extends AbstractWeapon {
         }
     }
 
+    /**
+     * Retourne le texte court affiché sur les cartes d'upgrade.
+     */
     private String getDescription(int nextLevel) {
-        // Texte court affiché dans les cartes d'upgrade.
         switch (getType()) {
             case STONE_SPRAY:
                 switch (nextLevel) {

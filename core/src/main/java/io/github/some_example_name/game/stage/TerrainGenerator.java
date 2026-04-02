@@ -31,7 +31,7 @@ public final class TerrainGenerator {
     }
 
     public static int getTileIndex(StageDefinition stage, int tileX, int tileY) {
-        switch (stage.id) {
+        switch (stage.getId()) {
             case FUTURE:
                 return getFutureTile(tileX, tileY);
             case PREHISTORY:

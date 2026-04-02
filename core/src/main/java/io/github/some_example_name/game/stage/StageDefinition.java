@@ -11,26 +11,26 @@ public class StageDefinition {
     public static final float WORLD_WIDTH = MAP_COLS * TILE_SIZE;
     public static final float WORLD_HEIGHT = MAP_ROWS * TILE_SIZE;
 
-    public final StageId id;
-    public final String displayName;
-    public final String subtitle;
-    public final TilesetType tilesetType;
-    public final int[][] mapTiles;
-    public final float durationSeconds;
-    public final float finalWaveLeadSeconds;
-    public final float[] phaseStartTimes;
-    public final float[] spawnIntervals;
-    public final int[] maxEnemies;
-    public final float[] speedBonuses;
-    public final float[][] spawnWeights;
-    public final EnemyArchetype grunt;
-    public final EnemyArchetype runner;
-    public final EnemyArchetype tank;
-    public final EnemyArchetype elite;
-    public final int finalWaveSupportCount;
-    public final Color backgroundColor;
-    public final Color accentColor;
-    public final Color panelColor;
+    private final StageId id;
+    private final String displayName;
+    private final String subtitle;
+    private final TilesetType tilesetType;
+    private final int[][] mapTiles;
+    private final float durationSeconds;
+    private final float finalWaveLeadSeconds;
+    private final float[] phaseStartTimes;
+    private final float[] spawnIntervals;
+    private final int[] maxEnemies;
+    private final float[] speedBonuses;
+    private final float[][] spawnWeights;
+    private final EnemyArchetype grunt;
+    private final EnemyArchetype runner;
+    private final EnemyArchetype tank;
+    private final EnemyArchetype elite;
+    private final int finalWaveSupportCount;
+    private final Color backgroundColor;
+    private final Color accentColor;
+    private final Color panelColor;
 
     public StageDefinition(StageId id, String displayName, String subtitle, TilesetType tilesetType, int[][] mapTiles,
                            float durationSeconds, float finalWaveLeadSeconds, float[] phaseStartTimes,
@@ -41,14 +41,14 @@ public class StageDefinition {
         this.displayName = displayName;
         this.subtitle = subtitle;
         this.tilesetType = tilesetType;
-        this.mapTiles = mapTiles;
+        this.mapTiles = copyMapTiles(mapTiles);
         this.durationSeconds = durationSeconds;
         this.finalWaveLeadSeconds = finalWaveLeadSeconds;
-        this.phaseStartTimes = phaseStartTimes;
-        this.spawnIntervals = spawnIntervals;
-        this.maxEnemies = maxEnemies;
-        this.speedBonuses = speedBonuses;
-        this.spawnWeights = spawnWeights;
+        this.phaseStartTimes = phaseStartTimes.clone();
+        this.spawnIntervals = spawnIntervals.clone();
+        this.maxEnemies = maxEnemies.clone();
+        this.speedBonuses = speedBonuses.clone();
+        this.spawnWeights = copySpawnWeights(spawnWeights);
         this.grunt = grunt;
         this.runner = runner;
         this.tank = tank;
@@ -57,6 +57,54 @@ public class StageDefinition {
         this.backgroundColor = new Color(backgroundColor);
         this.accentColor = new Color(accentColor);
         this.panelColor = new Color(panelColor);
+    }
+
+    public StageId getId() {
+        return id;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    public TilesetType getTilesetType() {
+        return tilesetType;
+    }
+
+    public float getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public EnemyArchetype getRunnerArchetype() {
+        return runner;
+    }
+
+    public EnemyArchetype getTankArchetype() {
+        return tank;
+    }
+
+    public EnemyArchetype getEliteArchetype() {
+        return elite;
+    }
+
+    public int getFinalWaveSupportCount() {
+        return finalWaveSupportCount;
+    }
+
+    public Color getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public Color getAccentColor() {
+        return accentColor;
+    }
+
+    public Color getPanelColor() {
+        return panelColor;
     }
 
     public float getFinalWaveStart() {
@@ -101,5 +149,21 @@ public class StageDefinition {
         }
 
         return tank;
+    }
+
+    private static int[][] copyMapTiles(int[][] source) {
+        int[][] copy = new int[source.length][];
+        for (int index = 0; index < source.length; index++) {
+            copy[index] = source[index].clone();
+        }
+        return copy;
+    }
+
+    private static float[][] copySpawnWeights(float[][] source) {
+        float[][] copy = new float[source.length][];
+        for (int index = 0; index < source.length; index++) {
+            copy[index] = source[index].clone();
+        }
+        return copy;
     }
 }

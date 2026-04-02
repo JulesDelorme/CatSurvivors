@@ -5,7 +5,9 @@ import io.github.some_example_name.game.Enemy;
 import io.github.some_example_name.game.EnemyArchetype;
 import io.github.some_example_name.game.stage.StageDefinition;
 
-// Gère la pression du stage : cadence de spawn, vague finale et condition de victoire.
+/**
+ * Gère la pression du stage : cadence de spawn, vague finale et condition de victoire.
+ */
 final class SessionSpawnController {
     private static final float ENEMY_SPAWN_RADIUS_MIN = StageDefinition.WORLD_HEIGHT * 0.62f;
     private static final float ENEMY_SPAWN_RADIUS_MAX = StageDefinition.WORLD_HEIGHT * 0.85f;
@@ -20,7 +22,7 @@ final class SessionSpawnController {
             spawnEnemies(session, delta);
         }
 
-        if (session.getSurvivalTime() >= session.getStage().durationSeconds
+        if (session.getSurvivalTime() >= session.getStage().getDurationSeconds()
             && session.isFinalWaveTriggeredInternal()
             && !hasEliteAlive(session)) {
             session.setStateInternal(SessionState.WON);
@@ -42,28 +44,30 @@ final class SessionSpawnController {
     private void spawnEnemy(GameSession session, EnemyArchetype archetype) {
         float angle = MathUtils.random(0f, 359f);
         float radius = MathUtils.random(ENEMY_SPAWN_RADIUS_MIN, ENEMY_SPAWN_RADIUS_MAX);
-        float spawnX = session.getPlayer().position.x + MathUtils.cosDeg(angle) * radius;
-        float spawnY = session.getPlayer().position.y + MathUtils.sinDeg(angle) * radius;
+        float spawnX = session.getPlayer().getPosition().x + MathUtils.cosDeg(angle) * radius;
+        float spawnY = session.getPlayer().getPosition().y + MathUtils.sinDeg(angle) * radius;
         session.getEnemies().add(new Enemy(archetype, spawnX, spawnY));
     }
 
+    /**
+     * Déclenche la vague finale signature du stage quand le timer de fin est atteint.
+     */
     private void triggerFinalWaveIfNeeded(GameSession session) {
         if (session.isFinalWaveTriggeredInternal() || session.getSurvivalTime() < session.getStage().getFinalWaveStart()) {
             return;
         }
 
-        // La fin de run force une vague signature avec l'élite du stage et ses renforts.
         session.setFinalWaveTriggeredInternal(true);
-        spawnEnemy(session, session.getStage().elite);
-        for (int index = 0; index < session.getStage().finalWaveSupportCount; index++) {
-            EnemyArchetype support = index % 2 == 0 ? session.getStage().runner : session.getStage().tank;
+        spawnEnemy(session, session.getStage().getEliteArchetype());
+        for (int index = 0; index < session.getStage().getFinalWaveSupportCount(); index++) {
+            EnemyArchetype support = index % 2 == 0 ? session.getStage().getRunnerArchetype() : session.getStage().getTankArchetype();
             spawnEnemy(session, support);
         }
     }
 
     private boolean hasEliteAlive(GameSession session) {
         for (Enemy enemy : session.getEnemies()) {
-            if (enemy.alive && enemy.archetype.elite) {
+            if (enemy.isAlive() && enemy.getArchetype().isElite()) {
                 return true;
             }
         }

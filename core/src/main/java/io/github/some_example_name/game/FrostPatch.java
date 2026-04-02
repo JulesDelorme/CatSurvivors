@@ -3,12 +3,12 @@ package io.github.some_example_name.game;
 import com.badlogic.gdx.math.Vector2;
 
 public class FrostPatch {
-    public final Vector2 position = new Vector2();
-    public final float radius;
-    public final float duration;
-    public final float slowMultiplier;
-    public float remainingDuration;
-    public float animationTime;
+    private final Vector2 position = new Vector2();
+    private final float radius;
+    private final float duration;
+    private final float slowMultiplier;
+    private float remainingDuration;
+    private float animationTime;
 
     public FrostPatch(float x, float y, float radius, float duration, float slowMultiplier) {
         position.set(x, y);
@@ -30,5 +30,29 @@ public class FrostPatch {
 
     public boolean isExpired() {
         return remainingDuration <= 0f;
+    }
+
+    public Vector2 getPosition() {
+        return position;
+    }
+
+    public float getRadius() {
+        return radius;
+    }
+
+    public float getDuration() {
+        return duration;
+    }
+
+    public float getSlowMultiplier() {
+        return slowMultiplier;
+    }
+
+    public float getRemainingDuration() {
+        return remainingDuration;
+    }
+
+    public float getAnimationTime() {
+        return animationTime;
     }
 }

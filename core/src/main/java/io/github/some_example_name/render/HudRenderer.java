@@ -19,11 +19,13 @@ public class HudRenderer {
     private static final Color TEXT_MUTED = new Color(0.82f, 0.86f, 0.90f, 0.92f);
     private static final Color ROW_TINT = new Color(1f, 1f, 1f, 0.06f);
 
+    /**
+     * Dessine le HUD en trois blocs : état du joueur, progression du run et inventaire.
+     */
     public void draw(SpriteBatch batch, BitmapFont font, GlyphLayout glyphLayout, Texture whitePixel, GameAssets assets,
                      GameSession session) {
-        // HUD découpé en trois blocs : état joueur, progression du run, inventaire/passifs.
-        Color panelColor = session.getStage().panelColor;
-        Color accentColor = session.getStage().accentColor;
+        Color panelColor = session.getStage().getPanelColor();
+        Color accentColor = session.getStage().getAccentColor();
 
         float leftX = 18f;
         float leftY = StageDefinition.WORLD_HEIGHT - 158f;
@@ -40,24 +42,24 @@ public class HudRenderer {
         drawPanel(batch, whitePixel, rightX, rightY, rightWidth, 198f, panelColor, accentColor);
 
         font.setColor(accentColor);
-        font.draw(batch, session.getStage().displayName, leftX + 16f, StageDefinition.WORLD_HEIGHT - 30f);
+        font.draw(batch, session.getStage().getDisplayName(), leftX + 16f, StageDefinition.WORLD_HEIGHT - 30f);
         font.setColor(TEXT_MUTED);
-        font.draw(batch, session.getStage().subtitle, leftX + 16f, StageDefinition.WORLD_HEIGHT - 54f);
+        font.draw(batch, session.getStage().getSubtitle(), leftX + 16f, StageDefinition.WORLD_HEIGHT - 54f);
         font.setColor(Color.WHITE);
         font.draw(batch, "Niveau " + session.getLevel(), leftX + 16f, StageDefinition.WORLD_HEIGHT - 82f);
 
         drawFramedBar(batch, whitePixel, leftX + 16f, StageDefinition.WORLD_HEIGHT - 116f, 220f, 16f,
-            session.getPlayer().health / session.getPlayer().maxHealth, HP_BAR, accentColor);
+            session.getPlayer().getHealth() / session.getPlayer().getMaxHealth(), HP_BAR, accentColor);
         drawFramedBar(batch, whitePixel, leftX + 16f, StageDefinition.WORLD_HEIGHT - 142f, 220f, 14f,
             session.getCurrentXp() / session.getXpToNextLevel(), XP_BAR, accentColor);
         font.setColor(Color.WHITE);
-        font.draw(batch, "PV " + Math.round(session.getPlayer().health) + " / " + Math.round(session.getPlayer().maxHealth),
+        font.draw(batch, "PV " + Math.round(session.getPlayer().getHealth()) + " / " + Math.round(session.getPlayer().getMaxHealth()),
             leftX + 246f, StageDefinition.WORLD_HEIGHT - 103f);
         font.setColor(TEXT_MUTED);
         font.draw(batch, "XP suivante", leftX + 246f, StageDefinition.WORLD_HEIGHT - 128f);
 
-        float timeLeft = Math.max(0f, session.getStage().durationSeconds - session.getSurvivalTime());
-        float progress = session.getSurvivalTime() / session.getStage().durationSeconds;
+        float timeLeft = Math.max(0f, session.getStage().getDurationSeconds() - session.getSurvivalTime());
+        float progress = session.getSurvivalTime() / session.getStage().getDurationSeconds();
         font.setColor(Color.WHITE);
         font.draw(batch, "Run", centerX + 16f, StageDefinition.WORLD_HEIGHT - 32f);
         font.setColor(TEXT_MUTED);
@@ -115,9 +117,11 @@ public class HudRenderer {
         return y - 22f;
     }
 
+    /**
+     * Dessine une barre encadrée pour améliorer sa lisibilité sur les maps chargées.
+     */
     private void drawFramedBar(SpriteBatch batch, Texture whitePixel, float x, float y, float width, float height,
                                float ratio, Color fillColor, Color accentColor) {
-        // Les barres ont un léger cadre pour mieux ressortir sur les maps chargées.
         drawRect(batch, whitePixel, x - 2f, y - 2f, width + 4f, height + 4f, PANEL_SHADOW);
         drawRect(batch, whitePixel, x, y, width, height, BAR_BG);
         drawRect(batch, whitePixel, x, y + height - 2f, width, 2f, new Color(accentColor.r, accentColor.g, accentColor.b, 0.25f));

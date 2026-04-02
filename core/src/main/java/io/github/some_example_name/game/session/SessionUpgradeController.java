@@ -10,7 +10,9 @@ import io.github.some_example_name.game.weapon.Weapon;
 
 import java.util.EnumMap;
 
-// Gère la progression du run : XP, niveaux, passifs et cartes d'amélioration.
+/**
+ * Gère la progression du run : XP, niveaux, passifs et cartes d'amélioration.
+ */
 final class SessionUpgradeController {
     private static final float BASE_PLAYER_SPEED = 280f;
     private static final float BASE_PICKUP_MAGNET = 96f;
@@ -47,17 +49,19 @@ final class SessionUpgradeController {
         return value == null ? 0 : value;
     }
 
+    /**
+     * Applique le choix d'upgrade sélectionné et rouvre des cartes tant que des niveaux restent en attente.
+     */
     void chooseUpgrade(GameSession session, int index) {
         if (session.getState() != SessionState.LEVEL_UP || index < 0 || index >= session.getLevelChoices().size) {
             return;
         }
 
-        // Une carte d'upgrade applique soit une arme, soit un passif, puis relance la partie.
         UpgradeChoice choice = session.getLevelChoices().get(index);
-        if (choice.category == UpgradeCategory.WEAPON) {
-            session.weaponRegistry().get(choice.weaponType).applyUpgrade(session);
+        if (choice.getCategory() == UpgradeCategory.WEAPON) {
+            session.weaponRegistry().get(choice.getWeaponType()).applyUpgrade(session);
         } else {
-            applyPassiveUpgrade(session, choice.passiveType);
+            applyPassiveUpgrade(session, choice.getPassiveType());
         }
 
         session.decrementPendingLevelUpsInternal();
@@ -69,6 +73,9 @@ final class SessionUpgradeController {
         }
     }
 
+    /**
+     * Ajoute de l'expérience puis ouvre un choix d'upgrade dès qu'un niveau est gagné.
+     */
     void gainExperience(GameSession session, int amount) {
         session.setCurrentXpInternal(session.getCurrentXp() + amount);
         while (session.getCurrentXp() >= session.getXpToNextLevel()) {
@@ -78,32 +85,33 @@ final class SessionUpgradeController {
             session.setXpToNextLevelInternal(getXpThreshold(session.getLevel()));
         }
 
-        // Les niveaux en attente ouvrent un choix d'upgrade dès que la boucle peut être interrompue.
         if (session.getPendingLevelUpsInternal() > 0) {
             openLevelChoices(session);
         }
     }
 
+    /**
+     * Recalcule les statistiques dérivées du joueur à partir des passifs actifs.
+     */
     private void refreshDerivedStats(GameSession session) {
-        // Les passifs modifient des stats dérivées ; on recentralise ces calculs ici.
         Player player = session.getPlayer();
-        float previousMaxHealth = player.maxHealth;
-        player.maxHealth = Player.BASE_MAX_HEALTH + getPassiveLevel(session, PassiveType.VITALITY) * 20f;
-        player.speed = BASE_PLAYER_SPEED + getPassiveLevel(session, PassiveType.SPEED) * 28f;
+        float previousMaxHealth = player.getMaxHealth();
+        player.setMaxHealth(Player.BASE_MAX_HEALTH + getPassiveLevel(session, PassiveType.VITALITY) * 20f);
+        player.setSpeed(BASE_PLAYER_SPEED + getPassiveLevel(session, PassiveType.SPEED) * 28f);
         if (previousMaxHealth == 0f) {
-            player.health = player.maxHealth;
+            player.setHealth(player.getMaxHealth());
         } else {
-            player.health = Math.min(player.health, player.maxHealth);
+            player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
         }
     }
 
     private void applyPassiveUpgrade(GameSession session, PassiveType passiveType) {
         session.passiveLevelRegistry().put(passiveType, Math.min(5, getPassiveLevel(session, passiveType) + 1));
-        float previousMaxHealth = session.getPlayer().maxHealth;
+        float previousMaxHealth = session.getPlayer().getMaxHealth();
         refreshDerivedStats(session);
         if (passiveType == PassiveType.VITALITY) {
-            session.getPlayer().health = Math.min(session.getPlayer().maxHealth,
-                Math.max(session.getPlayer().health, previousMaxHealth) + 20f);
+            session.getPlayer().setHealth(Math.min(session.getPlayer().getMaxHealth(),
+                Math.max(session.getPlayer().getHealth(), previousMaxHealth) + 20f));
         }
     }
 
@@ -111,11 +119,13 @@ final class SessionUpgradeController {
         return 8f + (currentLevel - 1) * 5f;
     }
 
+    /**
+     * Remplit l'overlay de niveau à partir de toutes les armes et passifs encore améliorable.
+     */
     private void openLevelChoices(GameSession session) {
         session.clearLevelChoicesInternal();
         Array<UpgradeChoice> available = new Array<UpgradeChoice>();
 
-        // Les cartes sont tirées depuis tout ce qui reste améliorable : armes et passifs.
         for (Weapon weapon : session.weaponRegistry().values()) {
             if (weapon.canOfferUpgrade()) {
                 available.add(weapon.buildChoice(session));

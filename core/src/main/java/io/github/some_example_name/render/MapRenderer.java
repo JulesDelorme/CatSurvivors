@@ -18,11 +18,13 @@ public class MapRenderer {
     private static final Color FUTURE_CYAN = new Color(0.33f, 0.94f, 0.98f, 1f);
     private static final Color FUTURE_VIOLET = new Color(0.54f, 0.48f, 0.92f, 1f);
 
+    /**
+     * Dessine la map en couches : ambiance de fond, tuiles visibles, décor secondaire et voile avant-plan.
+     */
     public void draw(SpriteBatch batch, GameAssets assets, StageDefinition stage, OrthographicCamera camera) {
-        // Rendu en couches : ambiance de fond, tuiles visibles, puis décor/voile avant-plan.
         Texture whitePixel = assets.getWhitePixel();
         Texture softGlow = assets.getSoftGlow();
-        TextureRegion[] tiles = assets.getTiles(stage.tilesetType);
+        TextureRegion[] tiles = assets.getTiles(stage.getTilesetType());
         batch.setColor(Color.WHITE);
         int startCol = (int) Math.floor((camera.position.x - StageDefinition.WORLD_WIDTH * 0.5f) / StageDefinition.TILE_SIZE) - 2;
         int endCol = (int) Math.ceil((camera.position.x + StageDefinition.WORLD_WIDTH * 0.5f) / StageDefinition.TILE_SIZE) + 2;
@@ -47,21 +49,24 @@ public class MapRenderer {
         batch.setColor(Color.WHITE);
     }
 
+    /**
+     * Dessine un fond large et flottant pour éviter un rendu trop plat derrière la carte.
+     */
     private void drawBackdrop(SpriteBatch batch, Texture whitePixel, Texture softGlow, StageDefinition stage,
                               OrthographicCamera camera) {
-        // Fond large et légèrement flottant pour éviter un rendu trop plat derrière la carte.
         float left = camera.position.x - StageDefinition.WORLD_WIDTH * 0.68f;
         float bottom = camera.position.y - StageDefinition.WORLD_HEIGHT * 0.68f;
         float width = StageDefinition.WORLD_WIDTH * 1.36f;
         float height = StageDefinition.WORLD_HEIGHT * 1.36f;
 
-        batch.setColor(stage.backgroundColor.r * 0.85f, stage.backgroundColor.g * 0.85f, stage.backgroundColor.b * 0.9f, 0.55f);
+        batch.setColor(stage.getBackgroundColor().r * 0.85f, stage.getBackgroundColor().g * 0.85f,
+            stage.getBackgroundColor().b * 0.9f, 0.55f);
         batch.draw(whitePixel, left, bottom, width, height);
 
-        if (stage.tilesetType == TilesetType.FUTURE) {
+        if (stage.getTilesetType() == TilesetType.FUTURE) {
             drawGlow(batch, softGlow, camera.position.x - 260f, camera.position.y + 180f, 340f, FUTURE_CYAN, 0.14f);
             drawGlow(batch, softGlow, camera.position.x + 280f, camera.position.y - 120f, 300f, FUTURE_VIOLET, 0.11f);
-            drawGlow(batch, softGlow, camera.position.x, camera.position.y + 12f, 480f, stage.accentColor, 0.07f);
+            drawGlow(batch, softGlow, camera.position.x, camera.position.y + 12f, 480f, stage.getAccentColor(), 0.07f);
             for (int index = -2; index <= 2; index++) {
                 float stripeY = camera.position.y - 220f + index * 104f;
                 batch.setColor(FUTURE_CYAN.r, FUTURE_CYAN.g, FUTURE_CYAN.b, 0.035f);
@@ -70,40 +75,44 @@ public class MapRenderer {
         } else {
             drawGlow(batch, softGlow, camera.position.x - 220f, camera.position.y + 190f, 420f, PREHISTORY_WARM, 0.14f);
             drawGlow(batch, softGlow, camera.position.x + 320f, camera.position.y - 80f, 300f, PREHISTORY_COOL, 0.08f);
-            drawGlow(batch, softGlow, camera.position.x - 20f, camera.position.y - 120f, 360f, stage.accentColor, 0.05f);
+            drawGlow(batch, softGlow, camera.position.x - 20f, camera.position.y - 120f, 360f, stage.getAccentColor(), 0.05f);
             batch.setColor(0f, 0f, 0f, 0.05f);
             batch.draw(whitePixel, left, camera.position.y + 180f, width, 120f);
         }
     }
 
+    /**
+     * Ajoute des variations visuelles locales pour casser l'aspect quadrillé de la map.
+     */
     private void drawTileMood(SpriteBatch batch, Texture whitePixel, Texture softGlow, StageDefinition stage, int tileIndex,
                               float tileX, float tileY, long noise) {
-        // Micro-variations visuelles par case pour casser l'aspect quadrillé de la map.
         float darkness = 0.022f + (noise & 3L) * 0.008f;
         batch.setColor(0f, 0f, 0f, darkness);
         batch.draw(whitePixel, tileX, tileY, StageDefinition.TILE_SIZE, StageDefinition.TILE_SIZE);
 
         if ((noise & 31L) == 0L) {
-            Color sparkleColor = stage.tilesetType == TilesetType.FUTURE ? FUTURE_CYAN : PREHISTORY_WARM;
+            Color sparkleColor = stage.getTilesetType() == TilesetType.FUTURE ? FUTURE_CYAN : PREHISTORY_WARM;
             drawGlow(batch, softGlow, tileX + 16f, tileY + 16f, StageDefinition.TILE_SIZE * 2.8f, sparkleColor, 0.05f);
         }
 
-        if (!isAccentTile(stage.tilesetType, tileIndex)) {
+        if (!isAccentTile(stage.getTilesetType(), tileIndex)) {
             return;
         }
 
-        Color accent = stage.tilesetType == TilesetType.FUTURE ? stage.accentColor : PREHISTORY_WARM;
-        float alpha = stage.tilesetType == TilesetType.FUTURE ? 0.10f : 0.08f;
+        Color accent = stage.getTilesetType() == TilesetType.FUTURE ? stage.getAccentColor() : PREHISTORY_WARM;
+        float alpha = stage.getTilesetType() == TilesetType.FUTURE ? 0.10f : 0.08f;
         drawGlow(batch, softGlow, tileX + 16f, tileY + 16f, StageDefinition.TILE_SIZE * 2.5f, accent, alpha);
         batch.setColor(accent.r, accent.g, accent.b, alpha * 0.22f);
         batch.draw(whitePixel, tileX + 3f, tileY + 3f, StageDefinition.TILE_SIZE - 6f, StageDefinition.TILE_SIZE - 6f);
     }
 
+    /**
+     * Dessine un décor déterministe pour enrichir le terrain sans stocker une grande carte.
+     */
     private void drawStageDecor(SpriteBatch batch, GameAssets assets, StageDefinition stage, Texture whitePixel,
                                 Texture softGlow, int startCol, int endCol, int startRow, int endRow) {
-        // Décor secondaire déterministe pour garder une impression de terrain riche sans stocker une grande carte.
-        TextureRegion[] props = assets.getStageProps(stage.tilesetType);
-        TextureRegion decal = assets.getStageGroundDecal(stage.tilesetType);
+        TextureRegion[] props = assets.getStageProps(stage.getTilesetType());
+        TextureRegion decal = assets.getStageGroundDecal(stage.getTilesetType());
         if (props.length == 0 || decal == null) {
             return;
         }
@@ -111,11 +120,11 @@ public class MapRenderer {
         for (int row = startRow; row <= endRow; row++) {
             for (int col = startCol; col <= endCol; col++) {
                 int tileIndex = TerrainGenerator.getTileIndex(stage, col, row);
-                if (!isDecorBaseTile(stage.tilesetType, tileIndex)) {
+                if (!isDecorBaseTile(stage.getTilesetType(), tileIndex)) {
                     continue;
                 }
 
-                long noise = hash(col, row, stage.tilesetType == TilesetType.FUTURE ? 91 : 37);
+                long noise = hash(col, row, stage.getTilesetType() == TilesetType.FUTURE ? 91 : 37);
                 float tileX = col * StageDefinition.TILE_SIZE;
                 float tileY = row * StageDefinition.TILE_SIZE;
 
@@ -123,7 +132,7 @@ public class MapRenderer {
                     float decalSize = StageDefinition.TILE_SIZE * 0.86f;
                     float offsetX = (float) (((noise >>> 8) & 3L) - 1.5f);
                     float offsetY = (float) (((noise >>> 10) & 3L) - 1.5f);
-                    Color glowColor = stage.tilesetType == TilesetType.FUTURE ? stage.accentColor : PREHISTORY_WARM;
+                    Color glowColor = stage.getTilesetType() == TilesetType.FUTURE ? stage.getAccentColor() : PREHISTORY_WARM;
                     drawGlow(batch, softGlow, tileX + 16f, tileY + 16f, StageDefinition.TILE_SIZE * 2.4f, glowColor, 0.05f);
                     batch.setColor(DECAL_TINT);
                     batch.draw(decal, tileX + 2f + offsetX, tileY + 2f + offsetY, decalSize, decalSize);
@@ -139,12 +148,12 @@ public class MapRenderer {
                 float offsetY = (float) (((noise >>> 23) & 3L) - 1f);
                 float drawX = tileX + (StageDefinition.TILE_SIZE - size) * 0.5f + offsetX;
                 float drawY = tileY + (StageDefinition.TILE_SIZE - size) * 0.5f + offsetY;
-                Color glowColor = stage.tilesetType == TilesetType.FUTURE ? stage.accentColor : PREHISTORY_WARM;
+                Color glowColor = stage.getTilesetType() == TilesetType.FUTURE ? stage.getAccentColor() : PREHISTORY_WARM;
 
                 batch.setColor(0f, 0f, 0f, 0.18f);
                 batch.draw(whitePixel, drawX + size * 0.18f, drawY - 3f, size * 0.64f, 7f);
                 drawGlow(batch, softGlow, drawX + size * 0.5f, drawY + size * 0.45f, size * 2.2f, glowColor,
-                    stage.tilesetType == TilesetType.FUTURE ? 0.09f : 0.06f);
+                    stage.getTilesetType() == TilesetType.FUTURE ? 0.09f : 0.06f);
                 batch.setColor(PROP_TINT);
                 batch.draw(prop, drawX, drawY, size, size);
             }
@@ -155,7 +164,7 @@ public class MapRenderer {
                                     OrthographicCamera camera) {
         float left = camera.position.x - StageDefinition.WORLD_WIDTH * 0.5f;
         float bottom = camera.position.y - StageDefinition.WORLD_HEIGHT * 0.5f;
-        if (stage.tilesetType == TilesetType.FUTURE) {
+        if (stage.getTilesetType() == TilesetType.FUTURE) {
             batch.setColor(0.03f, 0.08f, 0.10f, 0.10f);
             batch.draw(whitePixel, left, bottom, StageDefinition.WORLD_WIDTH, 48f);
             drawGlow(batch, softGlow, camera.position.x + 340f, camera.position.y + 180f, 220f, FUTURE_CYAN, 0.06f);

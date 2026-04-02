@@ -3,21 +3,21 @@ package io.github.some_example_name.game;
 import com.badlogic.gdx.graphics.Color;
 
 public class EnemyArchetype {
-    public final String displayName;
-    public final String spriteKey;
-    public final float radius;
-    public final float baseSpeed;
-    public final float maxHealth;
-    public final int xpValue;
-    public final float contactDamagePerSecond;
-    public final float burstMultiplier;
-    public final float burstEvery;
-    public final float burstDuration;
-    public final Color primaryColor;
-    public final Color secondaryColor;
-    public final Color accentColor;
-    public final boolean robotic;
-    public final boolean elite;
+    private final String displayName;
+    private final String spriteKey;
+    private final float radius;
+    private final float baseSpeed;
+    private final float maxHealth;
+    private final int xpValue;
+    private final float contactDamagePerSecond;
+    private final float burstMultiplier;
+    private final float burstEvery;
+    private final float burstDuration;
+    private final Color primaryColor;
+    private final Color secondaryColor;
+    private final Color accentColor;
+    private final boolean robotic;
+    private final boolean elite;
 
     public EnemyArchetype(String displayName, String spriteKey, float radius, float baseSpeed, float maxHealth, int xpValue,
                           float contactDamagePerSecond, float burstMultiplier, float burstEvery, float burstDuration,
@@ -37,5 +37,65 @@ public class EnemyArchetype {
         this.accentColor = new Color(accentColor);
         this.robotic = robotic;
         this.elite = elite;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public String getSpriteKey() {
+        return spriteKey;
+    }
+
+    public float getRadius() {
+        return radius;
+    }
+
+    public float getBaseSpeed() {
+        return baseSpeed;
+    }
+
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    public int getXpValue() {
+        return xpValue;
+    }
+
+    public float getContactDamagePerSecond() {
+        return contactDamagePerSecond;
+    }
+
+    public float getBurstMultiplier() {
+        return burstMultiplier;
+    }
+
+    public float getBurstEvery() {
+        return burstEvery;
+    }
+
+    public float getBurstDuration() {
+        return burstDuration;
+    }
+
+    public Color getPrimaryColor() {
+        return primaryColor;
+    }
+
+    public Color getSecondaryColor() {
+        return secondaryColor;
+    }
+
+    public Color getAccentColor() {
+        return accentColor;
+    }
+
+    public boolean isRobotic() {
+        return robotic;
+    }
+
+    public boolean isElite() {
+        return elite;
     }
 }

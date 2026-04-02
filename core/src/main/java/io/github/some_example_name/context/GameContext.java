@@ -20,15 +20,16 @@ import io.github.some_example_name.screen.GameScreen;
 import io.github.some_example_name.screen.MenuScreen;
 import io.github.some_example_name.screen.UnlockScreen;
 
-// Point d'entrée partagé des écrans : services globaux, assets et routage de navigation.
+/**
+ * Point d'entrée partagé des écrans pour les services globaux, les assets et le routage.
+ */
 public class GameContext implements AppFlowRouter {
-    public final Main game;
-    public final SpriteBatch batch = new SpriteBatch();
-    public final BitmapFont font = new BitmapFont();
-    public final GlyphLayout glyphLayout = new GlyphLayout();
-    public final GameAssets assets = new GameAssets();
+    private final Main game;
+    private final SpriteBatch batch = new SpriteBatch();
+    private final BitmapFont font = new BitmapFont();
+    private final GlyphLayout glyphLayout = new GlyphLayout();
+    private final GameAssets assets = new GameAssets();
     private final ProgressStore progressStore = new ProgressStore();
-    // Le coordinateur contient la logique de flux, les écrans se contentent ensuite d'afficher et d'interagir.
     private final AppFlowCoordinator flow = new DefaultAppFlowCoordinator(this, progressStore);
 
     public GameContext(Main game) {
@@ -36,8 +37,31 @@ public class GameContext implements AppFlowRouter {
         font.getData().setScale(1.1f);
     }
 
+    /**
+     * Retourne le coordinateur de flux utilisé par les écrans.
+     */
     public AppFlowCoordinator flow() {
         return flow;
+    }
+
+    public Main getGame() {
+        return game;
+    }
+
+    public SpriteBatch getBatch() {
+        return batch;
+    }
+
+    public BitmapFont getFont() {
+        return font;
+    }
+
+    public GlyphLayout getGlyphLayout() {
+        return glyphLayout;
+    }
+
+    public GameAssets getAssets() {
+        return assets;
     }
 
     public StageDefinition getStage(StageId stageId) {
@@ -46,7 +70,6 @@ public class GameContext implements AppFlowRouter {
 
     @Override
     public void show(AppFlowState state) {
-        // Conversion entre un état abstrait de l'application et un écran LibGDX concret.
         if (state instanceof MenuFlowState) {
             game.replaceScreen(new MenuScreen(this));
             return;

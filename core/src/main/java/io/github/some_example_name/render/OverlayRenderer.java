@@ -21,8 +21,10 @@ public class OverlayRenderer {
     private static final Color CARD_HOVER = new Color(0.19f, 0.22f, 0.28f, 0.99f);
     private static final Color SUBTEXT = new Color(0.84f, 0.88f, 0.94f, 0.95f);
 
+    /**
+     * Recalcule les zones cliquables à partir de la géométrie réelle des cartes d'upgrade.
+     */
     public void layoutChoiceBounds(Array<Rectangle> bounds) {
-        // Les zones cliquables suivent exactement les cartes affichées par l'overlay de niveau.
         bounds.clear();
         float panelWidth = 960f;
         float cardWidth = 280f;
@@ -34,8 +36,10 @@ public class OverlayRenderer {
         }
     }
 
+    /**
+     * Dessine un overlay de pause simple et lisible sans casser l'identité visuelle du jeu.
+     */
     public void drawPause(SpriteBatch batch, BitmapFont font, GlyphLayout glyphLayout, Texture whitePixel, GameAssets assets) {
-        // Pause simple mais très lisible pour ne pas casser le rythme visuel du jeu.
         drawRect(batch, whitePixel, 0f, 0f, StageDefinition.WORLD_WIDTH, StageDefinition.WORLD_HEIGHT, OVERLAY);
         drawGlow(batch, assets, StageDefinition.WORLD_WIDTH * 0.5f, StageDefinition.WORLD_HEIGHT * 0.5f + 10f, 340f,
             new Color(0.58f, 0.84f, 1f, 1f), 0.12f);
@@ -48,9 +52,11 @@ public class OverlayRenderer {
         drawCentered(font, glyphLayout, batch, "WASD / ZQSD / Flèches pour bouger", StageDefinition.WORLD_HEIGHT * 0.5f - 52f, SUBTEXT);
     }
 
+    /**
+     * Dessine l'overlay de montée de niveau en réutilisant la couleur du stage courant.
+     */
     public void drawLevelUp(SpriteBatch batch, BitmapFont font, GlyphLayout glyphLayout, Texture whitePixel, GameAssets assets,
                             GameSession session, Array<Rectangle> bounds, int hoveredIndex) {
-        // L'overlay coupe l'action, mais garde la couleur du stage pour rester cohérent avec le run en cours.
         drawRect(batch, whitePixel, 0f, 0f, StageDefinition.WORLD_WIDTH, StageDefinition.WORLD_HEIGHT, OVERLAY);
 
         float panelWidth = 960f;
@@ -58,10 +64,10 @@ public class OverlayRenderer {
         float panelX = (StageDefinition.WORLD_WIDTH - panelWidth) * 0.5f;
         float panelY = (StageDefinition.WORLD_HEIGHT - panelHeight) * 0.5f;
         drawGlow(batch, assets, StageDefinition.WORLD_WIDTH * 0.5f, StageDefinition.WORLD_HEIGHT * 0.5f + 10f, 460f,
-            session.getStage().accentColor, 0.14f);
+            session.getStage().getAccentColor(), 0.14f);
         drawRect(batch, whitePixel, panelX + 6f, panelY - 6f, panelWidth, panelHeight, PANEL_SHADOW);
         drawRect(batch, whitePixel, panelX, panelY, panelWidth, panelHeight, PANEL);
-        drawRect(batch, whitePixel, panelX, panelY + panelHeight - 4f, panelWidth, 4f, session.getStage().accentColor);
+        drawRect(batch, whitePixel, panelX, panelY + panelHeight - 4f, panelWidth, 4f, session.getStage().getAccentColor());
         drawCentered(font, glyphLayout, batch, "Montée de niveau", panelY + panelHeight - 30f, new Color(0.95f, 0.92f, 0.75f, 1f));
         drawCentered(font, glyphLayout, batch, "Choisis une amélioration pour donner plus d'allure au run.", panelY + panelHeight - 58f,
             SUBTEXT);
@@ -71,27 +77,28 @@ public class OverlayRenderer {
             drawRect(batch, whitePixel, card.x + 4f, card.y - 4f, card.width, card.height, PANEL_SHADOW);
             drawRect(batch, whitePixel, card.x, card.y, card.width, card.height, hoveredIndex == index ? CARD_HOVER : CARD);
             drawRect(batch, whitePixel, card.x, card.y + card.height - 4f, card.width, 4f,
-                hoveredIndex == index ? session.getStage().accentColor : new Color(1f, 1f, 1f, 0.10f));
+                hoveredIndex == index ? session.getStage().getAccentColor() : new Color(1f, 1f, 1f, 0.10f));
 
             UpgradeChoice choice = session.getLevelChoices().get(index);
-            drawRect(batch, whitePixel, card.x + 10f, card.y + card.height - 34f, 32f, 22f, session.getStage().accentColor);
+            drawRect(batch, whitePixel, card.x + 10f, card.y + card.height - 34f, 32f, 22f, session.getStage().getAccentColor());
             font.draw(batch, Integer.toString(index + 1), card.x + 21f, card.y + card.height - 18f);
 
-            if (choice.category == UpgradeCategory.WEAPON) {
-                drawGlow(batch, assets, card.x + 30f, card.y + 126f, 54f, session.getStage().accentColor, 0.12f);
+            if (choice.getCategory() == UpgradeCategory.WEAPON) {
+                drawGlow(batch, assets, card.x + 30f, card.y + 126f, 54f, session.getStage().getAccentColor(), 0.12f);
                 batch.setColor(Color.WHITE);
-                batch.draw(assets.getWeaponIcon(choice.weaponType, choice.resultingLevel), card.x + 16f, card.y + 112f, 28f, 28f);
+                batch.draw(assets.getWeaponIcon(choice.getWeaponType(), choice.getResultingLevel()), card.x + 16f, card.y + 112f, 28f,
+                    28f);
             } else {
-                drawGlow(batch, assets, card.x + 30f, card.y + 126f, 54f, session.getStage().accentColor, 0.12f);
+                drawGlow(batch, assets, card.x + 30f, card.y + 126f, 54f, session.getStage().getAccentColor(), 0.12f);
                 batch.setColor(Color.WHITE);
-                batch.draw(assets.getPassiveIcon(choice.passiveType), card.x + 16f, card.y + 112f, 28f, 28f);
+                batch.draw(assets.getPassiveIcon(choice.getPassiveType()), card.x + 16f, card.y + 112f, 28f, 28f);
             }
 
-            glyphLayout.setText(font, choice.title, new Color(1f, 0.95f, 0.80f, 1f), card.width - 58f, 1, true);
+            glyphLayout.setText(font, choice.getTitle(), new Color(1f, 0.95f, 0.80f, 1f), card.width - 58f, 1, true);
             font.setColor(new Color(1f, 0.95f, 0.80f, 1f));
             font.draw(batch, glyphLayout, card.x + 52f, card.y + 145f);
 
-            glyphLayout.setText(font, choice.description, Color.WHITE, card.width - 26f, 1, true);
+            glyphLayout.setText(font, choice.getDescription(), Color.WHITE, card.width - 26f, 1, true);
             font.setColor(SUBTEXT);
             font.draw(batch, glyphLayout, card.x + 13f, card.y + 86f);
         }

@@ -18,7 +18,9 @@ import io.github.some_example_name.game.weapon.Weapon;
 
 import java.util.EnumMap;
 
-// Porte tout l'état runtime d'une partie et délègue les gros blocs métier à des composants dédiés.
+/**
+ * Porte tout l'état runtime d'une partie et délègue les gros blocs métier à des composants dédiés.
+ */
 public class GameSession {
     private final StageDefinition stage;
     private final Player player = new Player(0f, 0f);
@@ -130,12 +132,14 @@ public class GameSession {
         player.setMovement(horizontal, vertical);
     }
 
+    /**
+     * Fait avancer une frame de simulation en bornant le delta pour préserver la stabilité du run.
+     */
     public void update(float delta) {
         if (state != SessionState.RUNNING) {
             return;
         }
 
-        // On borne le delta pour éviter les grosses accélérations si le framerate chute brutalement.
         float frameDelta = Math.min(delta, 1f / 20f);
         addSurvivalTimeInternal(frameDelta);
         player.update(frameDelta);
@@ -145,7 +149,6 @@ public class GameSession {
             return;
         }
 
-        // Les armes jouent d'abord, puis le monde avance et résout les collisions.
         for (Weapon weapon : weapons.values()) {
             weapon.update(this, frameDelta);
         }
@@ -227,19 +230,30 @@ public class GameSession {
         combatResolver.ensureOrbitBladeCount(this, count, orbitRadius, bladeSize, damage);
     }
 
-    // API interne utilisée par les composants de session.
+    /**
+     * Retourne le registre mutable des armes possédées pendant la session.
+     */
     EnumMap<WeaponType, Weapon> weaponRegistry() {
         return weapons;
     }
 
+    /**
+     * Retourne le registre mutable des niveaux de passifs.
+     */
     EnumMap<PassiveType, Integer> passiveLevelRegistry() {
         return passiveLevels;
     }
 
+    /**
+     * Expose un buffer réutilisable pour calculer une direction d'attaque.
+     */
     Vector2 attackDirectionBufferInternal() {
         return attackDirectionBuffer;
     }
 
+    /**
+     * Expose un buffer réutilisable pour calculer une direction propre à une arme.
+     */
     Vector2 weaponDirectionBufferInternal() {
         return weaponDirectionBuffer;
     }

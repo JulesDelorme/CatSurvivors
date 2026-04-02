@@ -143,8 +143,10 @@ public class GameAssets {
         return texture;
     }
 
+    /**
+     * Crée un halo procédural réutilisé pour l'ambiance, les lueurs d'UI et les ombres douces.
+     */
     private Texture createSoftGlow() {
-        // Halo procédural réutilisé partout : ambiance, lueurs d'UI, ombres douces.
         int size = 96;
         float radius = (size - 2) * 0.5f;
         float center = (size - 1) * 0.5f;
@@ -359,7 +361,7 @@ public class GameAssets {
     }
 
     public TextureRegion getEnemySprite(EnemyArchetype archetype) {
-        return enemySprites.get(archetype.spriteKey);
+        return enemySprites.get(archetype.getSpriteKey());
     }
 
     public void dispose() {
